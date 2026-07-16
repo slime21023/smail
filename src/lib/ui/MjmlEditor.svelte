@@ -7,6 +7,7 @@
 	import { findNode, targetColumn } from '../core/schema/tree.js';
 	import type { BlockType, EditorState } from '../core/schema/types.js';
 	import { serializeToMjml } from '../core/serializer/serializeToMjml.js';
+	import { HistoryStore } from '../store/history.svelte.js';
 	import BlockPalette from './BlockPalette.svelte';
 	import Canvas from './Canvas.svelte';
 	import Inspector from './Inspector.svelte';
@@ -43,6 +44,8 @@
 	let mjml = $derived(serializeToMjml(doc, registry));
 	let selectedNode = $derived(selectedId === null ? null : findNode(doc, selectedId));
 
+	const history = new HistoryStore();
+
 	// Recompile (debounced) whenever the serialized document changes.
 	// untrack keeps this effect depending on `mjml` only — the onChange prop
 	// identity can change on every parent render (inline arrows), and tracking
@@ -56,6 +59,7 @@
 			untrack(() => onChange?.(doc));
 		}
 		const timer = setTimeout(async () => {
+			history.capture(current, $state.snapshot(doc) as EditorState);
 			const result = await compile(current);
 			// Ignore stale results from an earlier edit.
 			if (current === mjml) {
@@ -65,6 +69,28 @@
 		}, 300);
 		return () => clearTimeout(timer);
 	});
+
+	function restore(snapshot: EditorState | null) {
+		if (!snapshot) return;
+		doc.settings = snapshot.settings;
+		doc.body = snapshot.body;
+		selectedId = null;
+	}
+
+	function handleShortcuts(event: KeyboardEvent) {
+		if (readonly || !(event.ctrlKey || event.metaKey)) return;
+		// Leave native text-editing undo alone inside form fields.
+		const target = event.target as HTMLElement | null;
+		if (target && ('value' in target || target.isContentEditable)) return;
+		const key = event.key.toLowerCase();
+		if (key === 'z' && !event.shiftKey) {
+			event.preventDefault();
+			restore(history.undo());
+		} else if (key === 'y' || (key === 'z' && event.shiftKey)) {
+			event.preventDefault();
+			restore(history.redo());
+		}
+	}
 
 	function addSection() {
 		const section = createSection(1);
@@ -121,10 +147,16 @@
 	}
 </script>
 
+<svelte:window onkeydown={handleShortcuts} />
+
 <div class="sme-root" class:sme-readonly={readonly} style={themeStyle(theme)}>
 	<Toolbar
 		{previewMode}
 		{readonly}
+		canUndo={history.canUndo}
+		canRedo={history.canRedo}
+		onUndo={() => restore(history.undo())}
+		onRedo={() => restore(history.redo())}
 		onPreviewMode={(mode) => (previewMode = mode)}
 		onExportHtml={exportHtml}
 		onExportJson={exportJson}

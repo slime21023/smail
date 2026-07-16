@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '../compiler/compile.js';
 import { builtinBlocks } from '../registry/builtins.js';
+import { createRegistry } from '../registry/registry.js';
+import { defineBlock } from '../registry/types.js';
 import { createBlock, createColumn, createEmptyState, createSection } from '../schema/defaults.js';
 import type { Block, BlockType, EditorState } from '../schema/types.js';
 import { serializeToMjml } from './serializeToMjml.js';
@@ -93,6 +95,33 @@ describe('serializeToMjml', () => {
 		const result = await compile(serializeToMjml(state));
 		expect(result.errors).toEqual([]);
 		expect(result.html).toContain('<!doctype html>');
+	});
+
+	it('serializes custom blocks through a custom registry', () => {
+		const priceTag = defineBlock({
+			type: 'priceTag',
+			label: 'Price tag',
+			defaultProps: { amount: 100, currency: 'TWD' },
+			inspector: [],
+			toMjml: (p) => `<mj-text>${p.currency} ${p.amount}</mj-text>`
+		});
+		const registry = createRegistry([priceTag]);
+		const block = { id: 'p1', type: 'priceTag', props: { amount: 250, currency: 'USD' } };
+		const mjml = serializeToMjml(stateWith([block as unknown as Block]), registry);
+		expect(mjml).toContain('<mj-text>USD 250</mj-text>');
+	});
+
+	it('lets a custom definition override a built-in type', () => {
+		const custom = defineBlock({
+			type: 'spacer',
+			label: 'Spacer (custom)',
+			defaultProps: { height: 1 },
+			inspector: [],
+			toMjml: () => '<mj-spacer height="99px" />'
+		});
+		const registry = createRegistry([custom]);
+		const mjml = serializeToMjml(stateWith([createBlock('spacer')]), registry);
+		expect(mjml).toContain('<mj-spacer height="99px" />');
 	});
 
 	it('throws for a block type missing from the registry', () => {

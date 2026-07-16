@@ -1,6 +1,6 @@
 {
 	"name": "smail",
-	"version": "0.0.1",
+	"version": "0.1.0-alpha.0",
 	"description": "Embeddable EDM/email template editor library for Svelte, powered by Ark UI and MJML",
 	"license": "MIT",
 	"scripts": {
@@ -52,7 +52,13 @@
 		"vitest": "^4.1.10"
 	},
 	"keywords": [
-		"svelte"
+		"svelte",
+		"mjml",
+		"email",
+		"edm",
+		"newsletter",
+		"editor",
+		"email-builder"
 	],
 	"dependencies": {
 		"@ark-ui/svelte": "^5.22.1",

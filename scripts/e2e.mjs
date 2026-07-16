@@ -113,7 +113,43 @@ try {
 	);
 	await page.screenshot({ path: `${SHOT_DIR}/3-palette-drop.png` });
 
-	// 6. Mobile preview toggle
+	// 6. Undo removes the dropped divider, redo restores it
+	const dividerCount = () =>
+		page.evaluate(
+			() =>
+				document.querySelectorAll('.sme-columns')[1]?.querySelectorAll('[aria-label="divider"]')
+					.length ?? 0
+		);
+	const undoButton = page.locator('.sme-toolbar [aria-label="Undo"]');
+	await page.waitForFunction(
+		() => !document.querySelector('.sme-toolbar [aria-label="Undo"]')?.disabled,
+		{ timeout: 10000 }
+	);
+	await page.waitForTimeout(400); // let the post-drop history capture settle
+	await undoButton.click();
+	await page.waitForFunction(
+		() =>
+			(document.querySelectorAll('.sme-columns')[1]?.querySelectorAll('[aria-label="divider"]')
+				.length ?? 0) === 0,
+		{ timeout: 10000 }
+	);
+	await page.click('.sme-toolbar [aria-label="Redo"]');
+	await page.waitForFunction(
+		() =>
+			(document.querySelectorAll('.sme-columns')[1]?.querySelectorAll('[aria-label="divider"]')
+				.length ?? 0) === 1,
+		{ timeout: 10000 }
+	);
+	console.log('undo/redo ok, divider count:', await dividerCount());
+
+	// 7. Custom block (priceTag) renders in canvas and compiles into the preview
+	await page.click('.sme-canvas [aria-label="divider"]'); // select in column 2
+	await page.click('.sme-palette-item:has-text("Price tag")');
+	await page.waitForSelector('.sme-canvas [aria-label="priceTag"]', { timeout: 10000 });
+	await previewContains('TWD 4,900');
+	await page.screenshot({ path: `${SHOT_DIR}/4-custom-block.png` });
+
+	// 8. Mobile preview toggle
 	await page.click('.sme-toolbar button:has-text("Mobile")');
 	await page.waitForFunction(
 		() => document.querySelector('.sme-preview-frame')?.style.width === '375px',

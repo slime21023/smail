@@ -5,9 +5,25 @@
 		createColumn,
 		createEmptyState,
 		createSection,
+		defineBlock,
 		newId,
 		type EditorState
 	} from '$lib/index.js';
+	import PriceTagView from './PriceTagView.svelte';
+
+	// Custom block example (spec §8.4) — registered via the `blocks` prop.
+	const priceTag = defineBlock({
+		type: 'priceTag',
+		label: 'Price tag',
+		defaultProps: { amount: 4900, currency: 'TWD' },
+		inspector: [
+			{ key: 'amount', label: 'Amount', control: 'number', min: 0 },
+			{ key: 'currency', label: 'Currency', control: 'select', options: ['TWD', 'USD', 'EUR'] }
+		],
+		toMjml: (p) =>
+			`<mj-text align="center" font-size="28px" font-weight="bold" color="#dc2626">${p.currency} ${p.amount.toLocaleString('en-US')}</mj-text>`,
+		render: PriceTagView
+	});
 
 	function demoState(): EditorState {
 		const state = createEmptyState();
@@ -50,7 +66,7 @@
 </svelte:head>
 
 <div class="demo">
-	<MjmlEditor bind:state={template} onChange={() => changes++} />
+	<MjmlEditor bind:state={template} blocks={[priceTag]} onChange={() => changes++} />
 	<footer class="demo-footer">
 		smail demo playground — {changes} change{changes === 1 ? '' : 's'} this session
 	</footer>

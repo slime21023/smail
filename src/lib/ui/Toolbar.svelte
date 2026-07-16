@@ -2,12 +2,26 @@
 	interface Props {
 		previewMode: 'desktop' | 'mobile';
 		readonly: boolean;
+		canUndo: boolean;
+		canRedo: boolean;
+		onUndo: () => void;
+		onRedo: () => void;
 		onPreviewMode: (mode: 'desktop' | 'mobile') => void;
 		onExportHtml: () => void;
 		onExportJson: () => void;
 	}
 
-	let { previewMode, readonly, onPreviewMode, onExportHtml, onExportJson }: Props = $props();
+	let {
+		previewMode,
+		readonly,
+		canUndo,
+		canRedo,
+		onUndo,
+		onRedo,
+		onPreviewMode,
+		onExportHtml,
+		onExportJson
+	}: Props = $props();
 </script>
 
 <div class="sme-toolbar">
@@ -35,9 +49,22 @@
 	<div class="sme-toolbar-spacer"></div>
 
 	{#if !readonly}
-		<!-- undo/redo land in M4 (history store) -->
-		<button type="button" class="sme-tool" disabled title="Undo (coming soon)">↩</button>
-		<button type="button" class="sme-tool" disabled title="Redo (coming soon)">↪</button>
+		<button
+			type="button"
+			class="sme-tool"
+			disabled={!canUndo}
+			title="Undo (Ctrl+Z)"
+			aria-label="Undo"
+			onclick={onUndo}>↩</button
+		>
+		<button
+			type="button"
+			class="sme-tool"
+			disabled={!canRedo}
+			title="Redo (Ctrl+Y)"
+			aria-label="Redo"
+			onclick={onRedo}>↪</button
+		>
 	{/if}
 	<button type="button" class="sme-tool" onclick={onExportJson}>Export JSON</button>
 	<button type="button" class="sme-tool sme-tool-primary" onclick={onExportHtml}>
