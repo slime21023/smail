@@ -1,0 +1,13 @@
+/* Default light theme. Override any token via the `theme` prop or plain CSS. */
+.sme-root {
+	--sme-font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--sme-bg: #f1f5f9;
+	--sme-panel-bg: #ffffff;
+	--sme-border: #e2e8f0;
+	--sme-text: #0f172a;
+	--sme-text-muted: #64748b;
+	--sme-accent: #2563eb;
+	--sme-accent-soft: #dbeafe;
+	--sme-radius: 6px;
+	--sme-canvas-bg: #e2e8f0;
+}

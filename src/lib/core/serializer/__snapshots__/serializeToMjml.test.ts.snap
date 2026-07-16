@@ -1,0 +1,29 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`serializeToMjml > serializes every built-in block with default props 1`] = `
+"<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text color="#333333" />
+    </mj-attributes>
+    <mj-style>a { color: #2563eb; }</mj-style>
+  </mj-head>
+  <mj-body background-color="#f4f4f4" width="600px">
+    <mj-section padding="20px 0px 20px 0px">
+      <mj-column vertical-align="top">
+        <mj-text font-size="14px" align="left" line-height="1.5" padding="10px 25px 10px 25px">Write something…</mj-text>
+        <mj-image src="https://placehold.co/600x300/e2e8f0/64748b?text=Image" alt="" align="center" padding="10px 25px 10px 25px" />
+        <mj-button href="https://example.com" background-color="#2563eb" color="#ffffff" border-radius="4px" align="center" padding="10px 25px 10px 25px" inner-padding="10px 25px 10px 25px">Click me</mj-button>
+        <mj-divider border-color="#e2e8f0" border-width="1px" border-style="solid" width="100%" padding="10px 25px 10px 25px" />
+        <mj-spacer height="20px" />
+        <mj-social align="center" icon-size="24px" mode="horizontal" padding="10px 25px 10px 25px">
+          <mj-social-element name="facebook" href="https://facebook.com" />
+          <mj-social-element name="x" href="https://x.com" />
+          <mj-social-element name="instagram" href="https://instagram.com" />
+        </mj-social>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>"
+`;
