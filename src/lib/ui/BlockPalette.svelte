@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { dndzone } from 'svelte-dnd-action';
 	import type { BlockRegistry } from '../core/registry/registry.js';
 
 	interface Props {
@@ -7,33 +8,82 @@
 	}
 
 	let { registry, onAdd }: Props = $props();
+
+	export interface PaletteItem {
+		id: string;
+		type: string;
+		label: string;
+		props: unknown;
+	}
+
+	function makeItems(): PaletteItem[] {
+		return [...registry.values()].map((def) => ({
+			id: `palette-${def.type}`,
+			type: def.type,
+			label: def.label,
+			props: structuredClone(def.defaultProps)
+		}));
+	}
+
+	let items = $state<PaletteItem[]>([]);
+	$effect(() => {
+		items = makeItems();
+	});
+
+	// Copy-on-drag: let the item follow the pointer during consider, then
+	// restore the full palette on finalize — the canvas zone keeps the copy.
+	function handleConsider(e: CustomEvent<{ items: PaletteItem[] }>) {
+		items = e.detail.items;
+	}
+
+	function handleFinalize() {
+		items = makeItems();
+	}
 </script>
 
 <div class="sme-palette">
 	<p class="sme-palette-heading">Blocks</p>
-	{#each [...registry.values()] as def (def.type)}
-		<button type="button" class="sme-palette-item" onclick={() => onAdd(def.type)}>
-			{def.label}
-		</button>
-	{/each}
-	<p class="sme-palette-hint">Click to add to the selected column. Drag &amp; drop lands in M3.</p>
+	<div
+		class="sme-palette-items"
+		use:dndzone={{
+			items,
+			type: 'block',
+			flipDurationMs: 150,
+			dropFromOthersDisabled: true,
+			dropTargetStyle: {}
+		}}
+		onconsider={handleConsider}
+		onfinalize={handleFinalize}
+	>
+		{#each items as item (item.id)}
+			<button type="button" class="sme-palette-item" onclick={() => onAdd(item.type)}>
+				{item.label}
+			</button>
+		{/each}
+	</div>
+	<p class="sme-palette-hint">Drag into a column, or click to add to the selected one.</p>
 </div>
 
 <style>
 	.sme-palette {
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
 		padding: 12px;
 	}
 
 	.sme-palette-heading {
-		margin: 0 0 4px;
+		margin: 0 0 10px;
 		font-size: 11px;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
 		color: var(--sme-text-muted, #64748b);
+	}
+
+	.sme-palette-items {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
 	}
 
 	.sme-palette-item {
@@ -45,7 +95,7 @@
 		font: inherit;
 		font-size: 13px;
 		text-align: left;
-		cursor: pointer;
+		cursor: grab;
 	}
 
 	.sme-palette-item:hover {
@@ -54,7 +104,7 @@
 	}
 
 	.sme-palette-hint {
-		margin: 8px 0 0;
+		margin: 10px 0 0;
 		font-size: 11px;
 		color: var(--sme-text-muted, #64748b);
 	}

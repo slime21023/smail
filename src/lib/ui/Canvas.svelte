@@ -1,7 +1,10 @@
 <script lang="ts">
 	import type { Component } from 'svelte';
+	import { flip } from 'svelte/animate';
+	import { dndzone } from 'svelte-dnd-action';
 	import type { BlockRegistry } from '../core/registry/registry.js';
-	import type { Block, Section } from '../core/schema/types.js';
+	import { newId } from '../core/schema/defaults.js';
+	import type { Block, Column, Section } from '../core/schema/types.js';
 	import ButtonView from './blocks/ButtonView.svelte';
 	import DividerView from './blocks/DividerView.svelte';
 	import ImageView from './blocks/ImageView.svelte';
@@ -19,6 +22,7 @@
 		readonly: boolean;
 		onSelect: (id: string | null) => void;
 		onAddSection: () => void;
+		onReorderSections: (sections: Section[]) => void;
 		registry: BlockRegistry;
 	}
 
@@ -32,8 +36,11 @@
 		readonly,
 		onSelect,
 		onAddSection,
+		onReorderSections,
 		registry
 	}: Props = $props();
+
+	const FLIP_MS = 150;
 
 	// Built-in edit-mode views; custom blocks fall back to their registry `render`.
 	const builtinViews: Record<string, Component<{ props: never }>> = {
@@ -61,6 +68,35 @@
 			select(event, id);
 		}
 	}
+
+	// Sections are only draggable from their handle, so grabbing text inside
+	// a block never moves the whole section.
+	let sectionDragDisabled = $state(true);
+
+	function considerSections(e: CustomEvent<{ items: Section[] }>) {
+		onReorderSections(e.detail.items);
+	}
+
+	function finalizeSections(e: CustomEvent<{ items: Section[] }>) {
+		onReorderSections(e.detail.items);
+		sectionDragDisabled = true;
+	}
+
+	function considerBlocks(column: Column, e: CustomEvent<{ items: Block[] }>) {
+		column.blocks = e.detail.items;
+	}
+
+	// Items dragged in from the palette carry a `palette-*` id and a label —
+	// turn them into real blocks with fresh ids.
+	function finalizeBlocks(column: Column, e: CustomEvent<{ items: Block[] }>) {
+		column.blocks = e.detail.items.map((item) => {
+			if (!item.id.startsWith('palette-')) return item;
+			const { label: _label, ...block } = item as Block & { label?: string };
+			const created = { ...block, id: newId() } as Block;
+			onSelect(created.id);
+			return created;
+		});
+	}
 </script>
 
 <div
@@ -71,71 +107,117 @@
 	style:color={textColor}
 >
 	<div class="sme-email" style:width="{width}px" style:background-color={backgroundColor}>
-		{#each body as section (section.id)}
-			<div
-				class="sme-node sme-section"
-				class:sme-selected={selectedId === section.id}
-				role="button"
-				tabindex={readonly ? undefined : 0}
-				aria-label="Section"
-				onclick={(e) => select(e, section.id)}
-				onkeydown={(e) => selectKeydown(e, section.id)}
-				style:padding="{section.props.padding.top}px {section.props.padding.right}px {section.props
-					.padding.bottom}px {section.props.padding.left}px"
-				style:background-color={section.props.backgroundColor}
-				style:background-image={section.props.backgroundUrl
-					? `url(${section.props.backgroundUrl})`
-					: undefined}
-			>
-				<div class="sme-columns">
-					{#each section.columns as column (column.id)}
+		<div
+			class="sme-sections"
+			use:dndzone={{
+				items: body,
+				type: 'section',
+				flipDurationMs: FLIP_MS,
+				dragDisabled: readonly || sectionDragDisabled,
+				dropTargetStyle: {}
+			}}
+			onconsider={considerSections}
+			onfinalize={finalizeSections}
+		>
+			{#each body as section (section.id)}
+				<div
+					class="sme-node sme-section"
+					class:sme-selected={selectedId === section.id}
+					role="button"
+					tabindex={readonly ? undefined : 0}
+					aria-label="Section"
+					onclick={(e) => select(e, section.id)}
+					onkeydown={(e) => selectKeydown(e, section.id)}
+					animate:flip={{ duration: FLIP_MS }}
+					style:padding="{section.props.padding.top}px {section.props.padding.right}px {section
+						.props.padding.bottom}px {section.props.padding.left}px"
+					style:background-color={section.props.backgroundColor}
+					style:background-image={section.props.backgroundUrl
+						? `url(${section.props.backgroundUrl})`
+						: undefined}
+				>
+					{#if !readonly}
 						<div
-							class="sme-node sme-column"
-							class:sme-selected={selectedId === column.id}
-							role="button"
-							tabindex={readonly ? undefined : 0}
-							aria-label="Column"
-							onclick={(e) => select(e, column.id)}
-							onkeydown={(e) => selectKeydown(e, column.id)}
-							style:flex={column.props.width ? `0 0 ${column.props.width}` : '1 1 0'}
-							style:align-self={column.props.verticalAlign === 'middle'
-								? 'center'
-								: column.props.verticalAlign === 'bottom'
-									? 'flex-end'
-									: 'flex-start'}
-							style:background-color={column.props.backgroundColor}
+							class="sme-drag-handle"
+							title="Drag to reorder section"
+							onmousedown={() => (sectionDragDisabled = false)}
+							ontouchstart={() => (sectionDragDisabled = false)}
+							role="presentation"
 						>
-							{#each column.blocks as block (block.id)}
-								{@const View = viewFor(block)}
-								<div
-									class="sme-node sme-block"
-									class:sme-selected={selectedId === block.id}
-									role="button"
-									tabindex={readonly ? undefined : 0}
-									aria-label={block.type}
-									onclick={(e) => select(e, block.id)}
-									onkeydown={(e) => selectKeydown(e, block.id)}
-								>
-									{#if View}
-										<View props={block.props as never} />
-									{:else}
-										<div class="sme-block-fallback">{block.type}</div>
-									{/if}
-								</div>
-							{/each}
-							{#if column.blocks.length === 0}
-								<div class="sme-empty-hint">Empty column</div>
-							{/if}
+							⠿
 						</div>
-					{/each}
+					{/if}
+					<div class="sme-columns">
+						{#each section.columns as column (column.id)}
+							<div
+								class="sme-node sme-column"
+								class:sme-selected={selectedId === column.id}
+								role="button"
+								tabindex={readonly ? undefined : 0}
+								aria-label="Column"
+								onclick={(e) => select(e, column.id)}
+								onkeydown={(e) => selectKeydown(e, column.id)}
+								style:flex={column.props.width ? `0 0 ${column.props.width}` : '1 1 0'}
+								style:align-self={column.props.verticalAlign === 'middle'
+									? 'center'
+									: column.props.verticalAlign === 'bottom'
+										? 'flex-end'
+										: 'flex-start'}
+								style:background-color={column.props.backgroundColor}
+							>
+								<div
+									class="sme-blocks"
+									use:dndzone={{
+										items: column.blocks,
+										type: 'block',
+										flipDurationMs: FLIP_MS,
+										dragDisabled: readonly,
+										dropTargetStyle: { outline: '2px dashed var(--sme-accent, #2563eb)' }
+									}}
+									onconsider={(e) => considerBlocks(column, e)}
+									onfinalize={(e) => finalizeBlocks(column, e)}
+								>
+									{#each column.blocks as block (block.id)}
+										{@const View = viewFor(block)}
+										<div
+											class="sme-node sme-block"
+											class:sme-selected={selectedId === block.id}
+											role="button"
+											tabindex={readonly ? undefined : 0}
+											aria-label={block.type}
+											onclick={(e) => select(e, block.id)}
+											onkeydown={(e) => selectKeydown(e, block.id)}
+											animate:flip={{ duration: FLIP_MS }}
+										>
+											{#if View}
+												<View props={block.props as never} />
+											{:else}
+												<div class="sme-block-fallback">{block.type}</div>
+											{/if}
+										</div>
+									{/each}
+								</div>
+								{#if column.blocks.length === 0}
+									<div class="sme-empty-hint">Empty column</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
 				</div>
-			</div>
-		{/each}
+			{/each}
+		</div>
 		{#if body.length === 0}
 			<div class="sme-empty">
 				<p>No sections yet.</p>
 				{#if !readonly}
-					<button type="button" class="sme-add-section" onclick={(e) => { e.stopPropagation(); onAddSection(); }}>
+					<button
+						type="button"
+						class="sme-add-section"
+						onclick={(e) => {
+							e.stopPropagation();
+							onAddSection();
+						}}
+					>
 						+ Add section
 					</button>
 				{/if}
@@ -143,7 +225,14 @@
 		{/if}
 	</div>
 	{#if body.length > 0 && !readonly}
-		<button type="button" class="sme-add-section" onclick={(e) => { e.stopPropagation(); onAddSection(); }}>
+		<button
+			type="button"
+			class="sme-add-section"
+			onclick={(e) => {
+				e.stopPropagation();
+				onAddSection();
+			}}
+		>
 			+ Add section
 		</button>
 	{/if}
@@ -182,6 +271,28 @@
 		outline-offset: -2px;
 	}
 
+	.sme-drag-handle {
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		z-index: 2;
+		padding: 2px 5px;
+		font-size: 12px;
+		line-height: 1;
+		color: var(--sme-text-muted, #64748b);
+		background: var(--sme-panel-bg, #ffffff);
+		border: 1px solid var(--sme-border, #e2e8f0);
+		border-radius: 4px;
+		cursor: grab;
+		opacity: 0;
+		transition: opacity 120ms ease;
+	}
+
+	.sme-section:hover .sme-drag-handle,
+	.sme-section.sme-selected .sme-drag-handle {
+		opacity: 1;
+	}
+
 	.sme-columns {
 		display: flex;
 		align-items: stretch;
@@ -191,8 +302,12 @@
 		min-height: 40px;
 	}
 
+	.sme-blocks {
+		min-height: 24px;
+	}
+
 	.sme-empty-hint {
-		padding: 16px 8px;
+		padding: 0 8px 8px;
 		text-align: center;
 		font-size: 12px;
 		color: var(--sme-text-muted, #64748b);

@@ -146,6 +146,7 @@
 				{readonly}
 				onSelect={(id) => (selectedId = id)}
 				onAddSection={addSection}
+				onReorderSections={(sections) => (doc.body = sections)}
 				{registry}
 			/>
 		</section>
