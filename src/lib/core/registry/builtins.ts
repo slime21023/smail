@@ -160,15 +160,19 @@ export const socialBlock = defineBlock<SocialBlockProps>({
 		padding: { ...defaultPadding }
 	},
 	inspector: [
+		{ key: 'elements', label: 'Links', control: 'socialLinks' },
 		{ key: 'align', label: 'Align', control: 'segment', options: ['left', 'center', 'right'] },
 		{ key: 'iconSize', label: 'Icon size', control: 'number', min: 12, max: 64 },
 		{ key: 'mode', label: 'Layout', control: 'segment', options: ['horizontal', 'vertical'] }
 	],
 	toMjml: (p) => {
+		// -noshare: link the href directly ("follow us"); the bare network names
+		// wrap it in the platform's share-intent URL, which is never what an EDM
+		// social row wants.
 		const elements = p.elements
 			.map(
 				(el) =>
-					`  <mj-social-element${attrs({ name: el.network, href: el.href })} />`
+					`  <mj-social-element${attrs({ name: `${el.network}-noshare`, href: el.href })} />`
 			)
 			.join('\n');
 		const open = `<mj-social${attrs({
@@ -177,7 +181,9 @@ export const socialBlock = defineBlock<SocialBlockProps>({
 			mode: p.mode,
 			padding: paddingValue(p.padding)
 		})}>`;
-		return `${open}\n${elements}\n</mj-social>`;
+		return p.elements.length === 0
+			? `${open}</mj-social>`
+			: `${open}\n${elements}\n</mj-social>`;
 	}
 });
 

@@ -30,6 +30,7 @@ export {
 	settingsFields,
 	type StructuralFields
 } from './core/registry/structural.js';
+export { SOCIAL_NETWORKS } from './core/schema/types.js';
 export {
 	SCHEMA_VERSION,
 	createBlock,

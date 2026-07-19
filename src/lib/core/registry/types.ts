@@ -9,7 +9,8 @@ export type BuiltinInspectorControl =
 	| 'select'
 	| 'segment'
 	| 'padding'
-	| 'slider';
+	| 'slider'
+	| 'socialLinks';
 
 /**
  * Open union: any control name registered via the editor's `controls` prop is

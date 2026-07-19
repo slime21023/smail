@@ -45,6 +45,23 @@ describe('serializeToMjml', () => {
 		expect(serializeToMjml(state)).toMatchSnapshot();
 	});
 
+	it('links social elements directly via -noshare (never share-intent URLs)', () => {
+		const social = createBlock('social');
+		social.props.elements = [{ network: 'facebook', href: 'https://facebook.com/acme' }];
+		const mjml = serializeToMjml(stateWith([social]));
+		expect(mjml).toContain('name="facebook-noshare"');
+		expect(mjml).toContain('href="https://facebook.com/acme"');
+	});
+
+	it('serializes a social block with no elements as a single empty tag', () => {
+		const social = createBlock('social');
+		social.props.elements = [];
+		const mjml = serializeToMjml(stateWith([social]));
+		expect(mjml).toContain('</mj-social>');
+		expect(mjml).not.toContain('mj-social-element');
+		expect(mjml).not.toMatch(/<mj-social[^>]*>\n\n/);
+	});
+
 	it('escapes attribute values and button text', () => {
 		const button = createBlock('button');
 		button.props.text = 'Buy "now" & <save>';

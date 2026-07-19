@@ -4,9 +4,11 @@
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { InspectorField } from '../../core/registry/types.js';
+import type { SocialElement } from '../../core/schema/types.js';
 import NumberControl from './NumberControl.svelte';
 import PaddingControl from './PaddingControl.svelte';
 import SliderControl from './SliderControl.svelte';
+import SocialLinksControl from './SocialLinksControl.svelte';
 
 let target: HTMLElement;
 let instance: Record<string, unknown> | null = null;
@@ -53,6 +55,33 @@ describe('SliderControl', () => {
 		expect(target.querySelector('[data-part="thumb"]')).toBeTruthy();
 		expect(target.querySelector<HTMLInputElement>('input')?.value).toBe('55');
 		expect(target.textContent).toContain('55%');
+	});
+});
+
+describe('SocialLinksControl', () => {
+	const twoRows: SocialElement[] = [
+		{ network: 'facebook', href: 'https://facebook.com/acme' },
+		{ network: 'x', href: 'https://x.com/acme' }
+	];
+	const field: InspectorField = { key: 'elements', label: 'Links', control: 'socialLinks' };
+
+	it('renders one select + href input per row and an add button', () => {
+		render(SocialLinksControl, field, twoRows);
+		expect(target.querySelectorAll('select')).toHaveLength(2);
+		expect(target.querySelectorAll('input[type="text"]')).toHaveLength(2);
+		expect(target.querySelector('.sme-social-add')).toBeTruthy();
+	});
+
+	it('remove and add write new arrays through setValue', () => {
+		let written: unknown;
+		render(SocialLinksControl, field, twoRows, (v) => (written = v));
+		target.querySelector<HTMLButtonElement>('[aria-label="Remove link"]')?.click();
+		flushSync();
+		expect(written).toEqual([twoRows[1]]);
+
+		target.querySelector<HTMLButtonElement>('.sme-social-add')?.click();
+		flushSync();
+		expect(written).toEqual([...twoRows, { network: 'web', href: 'https://' }]);
 	});
 });
 

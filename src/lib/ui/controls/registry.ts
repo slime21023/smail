@@ -4,6 +4,7 @@ import PaddingControl from './PaddingControl.svelte';
 import SegmentControl from './SegmentControl.svelte';
 import SelectControl from './SelectControl.svelte';
 import SliderControl from './SliderControl.svelte';
+import SocialLinksControl from './SocialLinksControl.svelte';
 import TextControl from './TextControl.svelte';
 import TextareaControl from './TextareaControl.svelte';
 import type { ControlRegistry } from './types.js';
@@ -16,5 +17,6 @@ export const builtinControls: ControlRegistry = {
 	select: SelectControl,
 	segment: SegmentControl,
 	padding: PaddingControl,
-	slider: SliderControl
+	slider: SliderControl,
+	socialLinks: SocialLinksControl
 };

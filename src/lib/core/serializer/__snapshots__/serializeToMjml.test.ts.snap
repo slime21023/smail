@@ -18,9 +18,9 @@ exports[`serializeToMjml > serializes every built-in block with default props 1`
         <mj-divider border-color="#e2e8f0" border-width="1px" border-style="solid" width="100%" padding="10px 25px 10px 25px" />
         <mj-spacer height="20px" />
         <mj-social align="center" icon-size="24px" mode="horizontal" padding="10px 25px 10px 25px">
-          <mj-social-element name="facebook" href="https://facebook.com" />
-          <mj-social-element name="x" href="https://x.com" />
-          <mj-social-element name="instagram" href="https://instagram.com" />
+          <mj-social-element name="facebook-noshare" href="https://facebook.com" />
+          <mj-social-element name="x-noshare" href="https://x.com" />
+          <mj-social-element name="instagram-noshare" href="https://instagram.com" />
         </mj-social>
       </mj-column>
     </mj-section>

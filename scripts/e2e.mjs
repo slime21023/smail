@@ -266,6 +266,20 @@ try {
 	console.log('inline edit + undo ok');
 	await page.screenshot({ path: `${SHOT_DIR}/6-inline-edit.png` });
 
+	// 15. Social links editing (M6a): edit an href, add a github row
+	await page.click('.sme-canvas [aria-label="social"]');
+	const firstHref = page.locator('.sme-inspector .sme-social-row input[type="text"]').first();
+	await firstHref.fill('https://fb.example/test');
+	await previewContains('https://fb.example/test');
+	await page.click('.sme-inspector .sme-social-add');
+	await page
+		.locator('.sme-inspector .sme-social-row select')
+		.last()
+		.selectOption('github');
+	// compiled HTML carries the network's icon image, not the mjml name attr
+	await previewContains('github.png');
+	console.log('social links editing ok');
+
 	console.log('console errors:', errors.length ? errors : 'none');
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');

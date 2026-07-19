@@ -105,14 +105,17 @@ export interface SpacerBlockProps {
 	height: number;
 }
 
-export type SocialNetwork =
-	| 'facebook'
-	| 'x'
-	| 'instagram'
-	| 'linkedin'
-	| 'youtube'
-	| 'github'
-	| 'web';
+export const SOCIAL_NETWORKS = [
+	'facebook',
+	'x',
+	'instagram',
+	'linkedin',
+	'youtube',
+	'github',
+	'web'
+] as const;
+
+export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number];
 
 export interface SocialElement {
 	network: SocialNetwork;
