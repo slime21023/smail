@@ -310,6 +310,37 @@ try {
 	await previewContains('data:image/gif');
 	console.log('image upload hook ok');
 
+	// 18. Rich text (M6d): bold everything, then insert a parameter
+	const richBlock = page.locator('.sme-canvas [aria-label="text"]').first();
+	await richBlock.click(); // select → arms editing
+	await richBlock.dblclick();
+	const richedit = page.locator('.sme-text-richedit');
+	await richedit.waitFor({ timeout: 5000 });
+	await page.keyboard.press('Control+a');
+	await page.click('.sme-richtext-toolbar [aria-label="Bold"]');
+	await page.mouse.click(20, 400); // canvas background: blur + commit + deselect
+	await page.waitForFunction(
+		() => {
+			const doc = document.querySelector('.sme-preview-frame')?.getAttribute('srcdoc') ?? '';
+			return doc.includes('<b>') || doc.includes('<strong>');
+		},
+		{ timeout: 20000 }
+	);
+
+	await richBlock.click();
+	await richBlock.dblclick();
+	await richedit.waitFor({ timeout: 5000 });
+	await page.keyboard.press('Control+End');
+	// fire mousedown so the toolbar saves the selection before the select takes focus
+	await page.locator('.sme-rt-params').dispatchEvent('mousedown');
+	await page.locator('.sme-rt-params').selectOption('firstName');
+	await page.mouse.click(20, 400);
+	await previewContains('{{firstName}}');
+	await page.locator('.sme-toolbar button:has-text("Sample")').click();
+	await previewContains('Alice');
+	console.log('rich text ok');
+	await page.screenshot({ path: `${SHOT_DIR}/7-rich-text.png` });
+
 	console.log('console errors:', errors.length ? errors : 'none');
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');

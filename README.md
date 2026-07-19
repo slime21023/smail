@@ -81,6 +81,21 @@ The built-in control set (`text`, `textarea`, `number`, `color`, `select`, `segm
 
 A control component receives `{ field, value, setValue }` (`ControlProps`). Fields support `{ label, value }` option pairs, a `unit` suffix, and `format`/`parse` hooks to map between stored and edited values. Section/column/document fields can be overridden wholesale via the `structuralFields` prop.
 
+### Template parameters
+
+Declare merge fields and the editor gets a parameter picker, a sample-data preview toggle, and undeclared-placeholder warnings; exported HTML always keeps the raw placeholders for your ESP to substitute:
+
+```svelte
+<MjmlEditor
+	parameters={[{ key: 'firstName', label: 'First name', sample: 'Alice' }]}
+	onImageUpload={(file) => uploadToCdn(file)}  <!-- optional: enables an Upload button on image blocks -->
+/>
+```
+
+Delimiters default to `{{ }}` and are configurable via `paramDelimiters`. Headless helpers `extractParams(mjml)` / `substituteParams(html, values)` are exported for send-time use.
+
+> ⚠️ Text block content is user-authored inline HTML and is **not sanitized** — treat stored templates as trusted input (same model as any HTML email tool embedded for your own team).
+
 ### Theming
 
 All editor chrome is styled with `--sme-*` CSS variables. Override them via the `theme` prop (`{ accent: '#7c3aed', 'panel-bg': '#fafafa' }`) or plain CSS.
