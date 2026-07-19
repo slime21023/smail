@@ -1,7 +1,7 @@
 {
 	"name": "smail",
 	"version": "0.1.0-alpha.0",
-	"description": "Embeddable EDM/email template editor library for Svelte, powered by Ark UI and MJML",
+	"description": "Embeddable EDM/email template editor library for Svelte, powered by zag.js and MJML",
 	"license": "MIT",
 	"scripts": {
 		"dev": "vite dev",
@@ -34,7 +34,7 @@
 	},
 	"peerDependencies": {
 		"mjml-browser": "^4.15.0",
-		"svelte": "^5.0.0"
+		"svelte": "^5.20.0"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.1",
@@ -61,7 +61,14 @@
 		"email-builder"
 	],
 	"dependencies": {
-		"@ark-ui/svelte": "^5.22.1",
+		"@zag-js/color-picker": "~1.41.2",
+		"@zag-js/color-utils": "~1.41.2",
+		"@zag-js/editable": "~1.41.2",
+		"@zag-js/number-input": "~1.41.2",
+		"@zag-js/radio-group": "~1.41.2",
+		"@zag-js/select": "~1.41.2",
+		"@zag-js/slider": "~1.41.2",
+		"@zag-js/svelte": "~1.41.2",
 		"svelte-dnd-action": "^0.9.74"
 	}
 }

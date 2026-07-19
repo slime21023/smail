@@ -2,7 +2,7 @@
 
 > Embeddable EDM / email template editor for Svelte — JSON in, battle-tested MJML HTML out, compiled entirely in the browser.
 
-Built with **Svelte 5 (runes)**, **[Ark UI](https://ark-ui.com)** (headless controls), and **[mjml-browser](https://github.com/mjmlio/mjml)** (client-side compilation, no backend needed).
+Built with **Svelte 5 (runes)**, **[zag.js](https://zagjs.com)** (headless UI state machines), and **[mjml-browser](https://github.com/mjmlio/mjml)** (client-side compilation, no backend needed).
 
 **Status: alpha.** Spec milestones M0–M4 are implemented (visual editing, drag & drop, undo/redo, custom blocks, live preview, HTML/JSON export). See [`_spec.md`](./_spec.md) for the full design document.
 
