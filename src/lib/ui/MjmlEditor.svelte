@@ -6,7 +6,17 @@
 	import type { StructuralFields } from '../core/registry/structural.js';
 	import type { ControlRegistry } from '../core/registry/types.js';
 	import { createBlock, createSection } from '../core/schema/defaults.js';
-	import { findNode, targetColumn } from '../core/schema/tree.js';
+	import {
+		addColumn as addColumnOp,
+		duplicateBlock,
+		duplicateSection,
+		findNode,
+		insertSection,
+		moveSection as moveSectionOp,
+		removeColumn as removeColumnOp,
+		removeNode as removeNodeOp,
+		targetColumn
+	} from '../core/schema/tree.js';
 	import type { BlockType, EditorState } from '../core/schema/types.js';
 	import { serializeToMjml } from '../core/serializer/serializeToMjml.js';
 	import { HistoryStore } from '../store/history.svelte.js';
@@ -100,9 +110,8 @@
 		}
 	}
 
-	function addSection() {
-		const section = createSection(1);
-		doc.body.push(section);
+	function addSection(columns = 1) {
+		const section = insertSection(doc, createSection(columns));
 		selectedId = section.id;
 	}
 
@@ -118,16 +127,28 @@
 	}
 
 	function removeNode(id: string) {
+		if (removeNodeOp(doc, id)) selectedId = null;
+	}
+
+	function duplicateNode(id: string) {
 		const node = findNode(doc, id);
 		if (!node) return;
-		if (node.kind === 'section') {
-			doc.body.splice(doc.body.indexOf(node.section), 1);
-		} else if (node.kind === 'column') {
-			node.section.columns.splice(node.section.columns.indexOf(node.column), 1);
-		} else {
-			node.column.blocks.splice(node.column.blocks.indexOf(node.block), 1);
-		}
-		selectedId = null;
+		const clone =
+			node.kind === 'section' ? duplicateSection(doc, id) : duplicateBlock(doc, id);
+		if (clone) selectedId = clone.id;
+	}
+
+	function moveSection(id: string, offset: -1 | 1) {
+		moveSectionOp(doc, id, offset);
+	}
+
+	function addColumn(sectionId: string) {
+		const column = addColumnOp(doc, sectionId);
+		if (column) selectedId = column.id;
+	}
+
+	function removeColumn(columnId: string) {
+		if (removeColumnOp(doc, columnId)) selectedId = null;
 	}
 
 	function download(filename: string, content: string, type: string) {
@@ -187,6 +208,8 @@
 				onSelect={(id) => (selectedId = id)}
 				onAddSection={addSection}
 				onReorderSections={(sections) => (doc.body = sections)}
+				onMoveSection={moveSection}
+				onDuplicate={duplicateNode}
 				{registry}
 			/>
 		</section>
@@ -202,6 +225,8 @@
 					{controls}
 					structural={structuralFields}
 					onDelete={removeNode}
+					onAddColumn={addColumn}
+					onRemoveColumn={removeColumn}
 				/>
 			</aside>
 		{/if}

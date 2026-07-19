@@ -39,6 +39,21 @@ export {
 	createSection,
 	newId
 } from './core/schema/defaults.js';
+export {
+	MAX_COLUMNS,
+	addColumn,
+	cloneWithNewIds,
+	duplicateBlock,
+	duplicateSection,
+	findNode,
+	insertSection,
+	moveBlock,
+	moveSection,
+	removeColumn,
+	removeNode,
+	targetColumn,
+	type NodeRef
+} from './core/schema/tree.js';
 export type {
 	Align,
 	Block,

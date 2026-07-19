@@ -58,13 +58,13 @@ try {
 	await previewContains('<!doctype html>');
 	await page.screenshot({ path: `${SHOT_DIR}/1-initial.png` });
 
-	// 2. Ark UI inspector edit reflects into the preview
+	// 2. Inspector edit reflects into the preview
 	await page.click('.sme-canvas [aria-label="button"]');
 	const labelInput = page.locator('.sme-inspector .sme-field', { hasText: 'Label' }).locator('input');
 	await labelInput.fill('EDITED LIVE');
 	await previewContains('EDITED LIVE');
 
-	// 3. Ark UI number input stepper (font size on the first text block)
+	// 3. zag number input stepper (font size on the first text block)
 	await page.click('.sme-canvas [aria-label="text"]');
 	const sizeField = page.locator('.sme-inspector .sme-field', { hasText: 'Font size' });
 	await sizeField.locator('button:has-text("▲")').click();
@@ -85,7 +85,7 @@ try {
 	await page.waitForFunction(
 		() => {
 			const col = document.querySelectorAll('.sme-columns')[1]?.querySelector('.sme-blocks');
-			const labels = [...(col?.querySelectorAll('[aria-label]') ?? [])].map((n) =>
+			const labels = [...(col?.querySelectorAll('.sme-block') ?? [])].map((n) =>
 				n.getAttribute('aria-label')
 			);
 			return labels[0] === 'button' && labels[1] === 'text';
@@ -156,6 +156,95 @@ try {
 		{ timeout: 5000 }
 	);
 
+	// 9. Structure editing (M5c): add a 2-column section
+	const columnCounts = () =>
+		page.evaluate(() =>
+			[...document.querySelectorAll('.sme-canvas .sme-section')].map(
+				(s) => s.querySelectorAll('.sme-column').length
+			)
+		);
+	const initialCounts = await columnCounts();
+	await page.click('.sme-add-section-row button[aria-label="Add section with 2 columns"]');
+	await page.waitForFunction(
+		(n) => document.querySelectorAll('.sme-canvas .sme-section').length === n + 1,
+		initialCounts.length
+	);
+	let counts = await columnCounts();
+	if (counts[counts.length - 1] !== 2)
+		throw new Error(`expected a trailing 2-column section, got [${counts}]`);
+
+	// 10. Add + remove a column via the Inspector (new nodes are auto-selected)
+	const lastSectionColumns = () =>
+		page.evaluate(
+			() =>
+				[...document.querySelectorAll('.sme-canvas .sme-section')].pop()?.querySelectorAll(
+					'.sme-column'
+				).length
+		);
+	await page.click('.sme-inspector button:has-text("+ Add column")');
+	await page.waitForFunction(
+		() =>
+			[...document.querySelectorAll('.sme-canvas .sme-section')].pop()?.querySelectorAll(
+				'.sme-column'
+			).length === 3,
+		{ timeout: 5000 }
+	);
+	await page.click('.sme-inspector button:has-text("Remove column")');
+	await page.waitForFunction(
+		() =>
+			[...document.querySelectorAll('.sme-canvas .sme-section')].pop()?.querySelectorAll(
+				'.sme-column'
+			).length === 2,
+		{ timeout: 5000 }
+	);
+	console.log('column add/remove ok, last section columns:', await lastSectionColumns());
+
+	// 11. Duplicate the first section from its hover toolbar
+	const sectionsBeforeDup = (await columnCounts()).length;
+	await page.hover('.sme-canvas .sme-section');
+	await page.click('.sme-canvas .sme-section [aria-label="Duplicate section"]');
+	await page.waitForFunction(
+		(n) => document.querySelectorAll('.sme-canvas .sme-section').length === n + 1,
+		sectionsBeforeDup
+	);
+
+	// 12. Move the trailing 2-column section up one slot
+	const beforeMove = await columnCounts();
+	const lastIndex = beforeMove.length;
+	await page.hover(`.sme-canvas .sme-section:nth-child(${lastIndex})`);
+	await page.click(
+		`.sme-canvas .sme-section:nth-child(${lastIndex}) [aria-label="Move section up"]`
+	);
+	const expected = [...beforeMove];
+	[expected[lastIndex - 2], expected[lastIndex - 1]] = [
+		expected[lastIndex - 1],
+		expected[lastIndex - 2]
+	];
+	await page.waitForFunction(
+		(want) => {
+			const got = [...document.querySelectorAll('.sme-canvas .sme-section')].map(
+				(s) => s.querySelectorAll('.sme-column').length
+			);
+			return JSON.stringify(got) === JSON.stringify(want);
+		},
+		expected,
+		{ timeout: 5000 }
+	);
+	console.log('section duplicate/move ok, column layout:', JSON.stringify(expected));
+
+	// 13. Duplicate a block from its hover button
+	const blocksBefore = await page.evaluate(
+		() => document.querySelectorAll('.sme-canvas .sme-block').length
+	);
+	const firstText = page.locator('.sme-canvas [aria-label="text"]').first();
+	await firstText.hover();
+	await firstText.locator('[aria-label="Duplicate block"]').click();
+	await page.waitForFunction(
+		(n) => document.querySelectorAll('.sme-canvas .sme-block').length === n + 1,
+		blocksBefore
+	);
+	await page.screenshot({ path: `${SHOT_DIR}/5-structure.png` });
+
 	console.log('console errors:', errors.length ? errors : 'none');
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');
@@ -166,7 +255,7 @@ try {
 		const blockOrder = await page
 			.evaluate(() =>
 				[...document.querySelectorAll('.sme-columns')].map((cols) =>
-					[...cols.querySelectorAll('.sme-blocks [aria-label]')].map((n) =>
+					[...cols.querySelectorAll('.sme-blocks .sme-block')].map((n) =>
 						n.getAttribute('aria-label')
 					)
 				)

@@ -18,7 +18,18 @@ export const sectionFields: InspectorField[] = [
 ];
 
 export const columnFields: InspectorField[] = [
-	{ key: 'width', label: 'Width (e.g. 50%)', control: 'text' },
+	{
+		key: 'width',
+		label: 'Width',
+		control: 'slider',
+		min: 10,
+		max: 100,
+		step: 5,
+		unit: '%',
+		// Stored as an MJML width string ('50%'); unset means "split evenly".
+		format: (raw) => (typeof raw === 'string' && raw ? parseFloat(raw) : 100),
+		parse: (value) => `${value}%`
+	},
 	{
 		key: 'verticalAlign',
 		label: 'Vertical align',

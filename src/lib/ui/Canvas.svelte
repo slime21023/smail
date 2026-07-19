@@ -21,8 +21,10 @@
 		selectedId: string | null;
 		readonly: boolean;
 		onSelect: (id: string | null) => void;
-		onAddSection: () => void;
+		onAddSection: (columns: number) => void;
 		onReorderSections: (sections: Section[]) => void;
+		onMoveSection: (id: string, offset: -1 | 1) => void;
+		onDuplicate: (id: string) => void;
 		registry: BlockRegistry;
 	}
 
@@ -37,8 +39,12 @@
 		onSelect,
 		onAddSection,
 		onReorderSections,
+		onMoveSection,
+		onDuplicate,
 		registry
 	}: Props = $props();
+
+	const COLUMN_CHOICES = [1, 2, 3, 4];
 
 	const FLIP_MS = 150;
 
@@ -99,6 +105,26 @@
 	}
 </script>
 
+{#snippet addSectionRow()}
+	<div class="sme-add-section-row" role="group" aria-label="Add section">
+		<span>+ Add section</span>
+		{#each COLUMN_CHOICES as count (count)}
+			<button
+				type="button"
+				class="sme-add-section"
+				title="Add section with {count} column{count === 1 ? '' : 's'}"
+				aria-label="Add section with {count} column{count === 1 ? '' : 's'}"
+				onclick={(e) => {
+					e.stopPropagation();
+					onAddSection(count);
+				}}
+			>
+				{count}
+			</button>
+		{/each}
+	</div>
+{/snippet}
+
 <div
 	class="sme-canvas"
 	role="presentation"
@@ -137,14 +163,49 @@
 						: undefined}
 				>
 					{#if !readonly}
-						<div
-							class="sme-drag-handle"
-							title="Drag to reorder section"
-							onmousedown={() => (sectionDragDisabled = false)}
-							ontouchstart={() => (sectionDragDisabled = false)}
-							role="presentation"
-						>
-							⠿
+						<div class="sme-section-toolbar">
+							<div
+								class="sme-drag-handle"
+								title="Drag to reorder section"
+								onmousedown={() => (sectionDragDisabled = false)}
+								ontouchstart={() => (sectionDragDisabled = false)}
+								role="presentation"
+							>
+								⠿
+							</div>
+							<button
+								type="button"
+								title="Move section up"
+								aria-label="Move section up"
+								onclick={(e) => {
+									e.stopPropagation();
+									onMoveSection(section.id, -1);
+								}}
+							>
+								▲
+							</button>
+							<button
+								type="button"
+								title="Move section down"
+								aria-label="Move section down"
+								onclick={(e) => {
+									e.stopPropagation();
+									onMoveSection(section.id, 1);
+								}}
+							>
+								▼
+							</button>
+							<button
+								type="button"
+								title="Duplicate section"
+								aria-label="Duplicate section"
+								onclick={(e) => {
+									e.stopPropagation();
+									onDuplicate(section.id);
+								}}
+							>
+								⧉
+							</button>
 						</div>
 					{/if}
 					<div class="sme-columns">
@@ -194,6 +255,20 @@
 											{:else}
 												<div class="sme-block-fallback">{block.type}</div>
 											{/if}
+											{#if !readonly}
+												<button
+													type="button"
+													class="sme-block-duplicate"
+													title="Duplicate block"
+													aria-label="Duplicate block"
+													onclick={(e) => {
+														e.stopPropagation();
+														onDuplicate(block.id);
+													}}
+												>
+													⧉
+												</button>
+											{/if}
 										</div>
 									{/each}
 								</div>
@@ -210,31 +285,13 @@
 			<div class="sme-empty">
 				<p>No sections yet.</p>
 				{#if !readonly}
-					<button
-						type="button"
-						class="sme-add-section"
-						onclick={(e) => {
-							e.stopPropagation();
-							onAddSection();
-						}}
-					>
-						+ Add section
-					</button>
+					{@render addSectionRow()}
 				{/if}
 			</div>
 		{/if}
 	</div>
 	{#if body.length > 0 && !readonly}
-		<button
-			type="button"
-			class="sme-add-section"
-			onclick={(e) => {
-				e.stopPropagation();
-				onAddSection();
-			}}
-		>
-			+ Add section
-		</button>
+		{@render addSectionRow()}
 	{/if}
 </div>
 
@@ -271,26 +328,68 @@
 		outline-offset: -2px;
 	}
 
-	.sme-drag-handle {
+	.sme-section-toolbar {
 		position: absolute;
 		top: 2px;
 		left: 2px;
 		z-index: 2;
+		display: flex;
+		gap: 2px;
+		opacity: 0;
+		transition: opacity 120ms ease;
+	}
+
+	.sme-section:hover > .sme-section-toolbar,
+	.sme-section.sme-selected > .sme-section-toolbar {
+		opacity: 1;
+	}
+
+	.sme-drag-handle,
+	.sme-section-toolbar button {
 		padding: 2px 5px;
+		font: inherit;
 		font-size: 12px;
 		line-height: 1;
 		color: var(--sme-text-muted, #64748b);
 		background: var(--sme-panel-bg, #ffffff);
 		border: 1px solid var(--sme-border, #e2e8f0);
 		border-radius: 4px;
+		cursor: pointer;
+	}
+
+	.sme-drag-handle {
 		cursor: grab;
+	}
+
+	.sme-section-toolbar button:hover {
+		background: var(--sme-accent-soft, #dbeafe);
+	}
+
+	.sme-block-duplicate {
+		position: absolute;
+		top: 2px;
+		right: 2px;
+		z-index: 2;
+		padding: 2px 5px;
+		font: inherit;
+		font-size: 12px;
+		line-height: 1;
+		color: var(--sme-text-muted, #64748b);
+		background: var(--sme-panel-bg, #ffffff);
+		border: 1px solid var(--sme-border, #e2e8f0);
+		border-radius: 4px;
+		cursor: pointer;
 		opacity: 0;
 		transition: opacity 120ms ease;
 	}
 
-	.sme-section:hover .sme-drag-handle,
-	.sme-section.sme-selected .sme-drag-handle {
+	.sme-block:hover > .sme-block-duplicate,
+	.sme-block.sme-selected > .sme-block-duplicate {
 		opacity: 1;
+	}
+
+	.sme-block-duplicate:hover {
+		background: var(--sme-accent-soft, #dbeafe);
 	}
 
 	.sme-columns {
@@ -326,12 +425,20 @@
 		background: var(--sme-accent-soft, #dbeafe);
 	}
 
+	.sme-add-section-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		color: var(--sme-text-muted, #64748b);
+	}
+
 	.sme-add-section {
 		border: 1px dashed var(--sme-border, #e2e8f0);
 		background: var(--sme-panel-bg, #ffffff);
 		color: var(--sme-accent, #2563eb);
 		border-radius: var(--sme-radius, 6px);
-		padding: 6px 14px;
+		padding: 6px 12px;
 		font: inherit;
 		font-size: 13px;
 		cursor: pointer;
