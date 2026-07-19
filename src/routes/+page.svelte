@@ -87,6 +87,12 @@
 			{ key: 'firstName', label: 'First name', sample: 'Alice' },
 			{ key: 'couponCode', label: 'Coupon', sample: 'WELCOME10' }
 		]}
+		onImageUpload={(file) =>
+			new Promise((resolve) => {
+				const reader = new FileReader();
+				reader.onload = () => setTimeout(() => resolve(reader.result as string), 300);
+				reader.readAsDataURL(file);
+			})}
 		onChange={() => changes++}
 	/>
 	<footer class="demo-footer">

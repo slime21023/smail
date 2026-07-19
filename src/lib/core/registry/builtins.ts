@@ -55,7 +55,7 @@ export const imageBlock = defineBlock<ImageBlockProps>({
 		padding: { ...defaultPadding }
 	},
 	inspector: [
-		{ key: 'src', label: 'Image URL', control: 'text' },
+		{ key: 'src', label: 'Image URL', control: 'imageSrc' },
 		{ key: 'alt', label: 'Alt text', control: 'text' },
 		{ key: 'width', label: 'Width (px)', control: 'number', min: 20, max: 600 },
 		{ key: 'href', label: 'Link URL', control: 'text' },

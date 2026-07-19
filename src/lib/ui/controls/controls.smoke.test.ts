@@ -3,8 +3,11 @@
 // lives in scripts/e2e.mjs, not here.
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
+import { DEFAULT_DELIMITERS } from '../../core/params/params.js';
 import type { InspectorField } from '../../core/registry/types.js';
 import type { SocialElement } from '../../core/schema/types.js';
+import { EDITOR_CTX, type EditorContext } from '../context.js';
+import ImageSrcControl from './ImageSrcControl.svelte';
 import NumberControl from './NumberControl.svelte';
 import PaddingControl from './PaddingControl.svelte';
 import SliderControl from './SliderControl.svelte';
@@ -17,11 +20,16 @@ function render(
 	component: typeof NumberControl,
 	field: InspectorField,
 	value: unknown,
-	setValue: (v: unknown) => void = () => {}
+	setValue: (v: unknown) => void = () => {},
+	context?: EditorContext
 ) {
 	target = document.createElement('div');
 	document.body.appendChild(target);
-	instance = mount(component, { target, props: { field, value, setValue } });
+	instance = mount(component, {
+		target,
+		props: { field, value, setValue },
+		context: context ? new Map([[EDITOR_CTX, context]]) : undefined
+	});
 	flushSync();
 }
 
@@ -82,6 +90,28 @@ describe('SocialLinksControl', () => {
 		target.querySelector<HTMLButtonElement>('.sme-social-add')?.click();
 		flushSync();
 		expect(written).toEqual([...twoRows, { network: 'web', href: 'https://' }]);
+	});
+});
+
+describe('ImageSrcControl', () => {
+	const field: InspectorField = { key: 'src', label: 'Image URL', control: 'imageSrc' };
+
+	it('renders a plain URL input without an editor context', () => {
+		render(ImageSrcControl, field, 'https://img.example/a.png');
+		expect(target.querySelector<HTMLInputElement>('input[type="text"]')?.value).toBe(
+			'https://img.example/a.png'
+		);
+		expect(target.querySelector('.sme-upload-btn')).toBeNull();
+	});
+
+	it('offers Upload when the context provides onImageUpload', () => {
+		render(ImageSrcControl, field, '', () => {}, {
+			onImageUpload: async () => 'https://cdn.example/up.png',
+			parameters: [],
+			delimiters: DEFAULT_DELIMITERS
+		});
+		expect(target.querySelector('.sme-upload-btn')).toBeTruthy();
+		expect(target.querySelector('.sme-upload-input')).toBeTruthy();
 	});
 });
 

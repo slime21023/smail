@@ -299,6 +299,17 @@ try {
 	);
 	console.log('template params ok');
 
+	// 17. Image upload hook (M6c): pick a file, demo hook resolves a data URI
+	await page.click('.sme-canvas [aria-label="image"]');
+	await page.waitForSelector('.sme-inspector .sme-upload-btn', { timeout: 5000 });
+	await page.setInputFiles('.sme-inspector .sme-upload-input', {
+		name: 'pixel.gif',
+		mimeType: 'image/gif',
+		buffer: Buffer.from('R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64')
+	});
+	await previewContains('data:image/gif');
+	console.log('image upload hook ok');
+
 	console.log('console errors:', errors.length ? errors : 'none');
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');

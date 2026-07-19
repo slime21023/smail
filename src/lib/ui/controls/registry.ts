@@ -1,4 +1,5 @@
 import ColorControl from './ColorControl.svelte';
+import ImageSrcControl from './ImageSrcControl.svelte';
 import NumberControl from './NumberControl.svelte';
 import PaddingControl from './PaddingControl.svelte';
 import SegmentControl from './SegmentControl.svelte';
@@ -18,5 +19,6 @@ export const builtinControls: ControlRegistry = {
 	segment: SegmentControl,
 	padding: PaddingControl,
 	slider: SliderControl,
-	socialLinks: SocialLinksControl
+	socialLinks: SocialLinksControl,
+	imageSrc: ImageSrcControl
 };

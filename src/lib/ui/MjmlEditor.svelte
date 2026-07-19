@@ -30,6 +30,7 @@
 	import { HistoryStore } from '../store/history.svelte.js';
 	import BlockPalette from './BlockPalette.svelte';
 	import Canvas from './Canvas.svelte';
+	import { setEditorContext } from './context.js';
 	import Inspector from './Inspector.svelte';
 	import Preview from './Preview.svelte';
 	import Toolbar from './Toolbar.svelte';
@@ -51,6 +52,8 @@
 		paramDelimiters?: ParamDelimiters;
 		/** Persist the merged declarations into state.settings.parameters (default true). */
 		persistParameters?: boolean;
+		/** When provided, the image inspector offers an Upload button; resolve to the hosted URL. */
+		onImageUpload?: (file: File) => Promise<string>;
 		theme?: ThemeTokens;
 		readonly?: boolean;
 	}
@@ -65,6 +68,7 @@
 		parameters,
 		paramDelimiters,
 		persistParameters = true,
+		onImageUpload,
 		theme = {},
 		readonly = false
 	}: Props = $props();
@@ -115,6 +119,19 @@
 	});
 
 	const history = new HistoryStore();
+
+	// Live via getters — context itself must be set exactly once, at init.
+	setEditorContext({
+		get onImageUpload() {
+			return onImageUpload;
+		},
+		get parameters() {
+			return effectiveParams;
+		},
+		get delimiters() {
+			return delims;
+		}
+	});
 
 	// Recompile (debounced) whenever the serialized document changes.
 	// untrack keeps this effect depending on `mjml` only — the onChange prop
