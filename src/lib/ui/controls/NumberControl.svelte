@@ -24,6 +24,9 @@
 <div {...api.getRootProps()}>
 	<div {...api.getControlProps()} class="sme-number-control">
 		<input {...api.getInputProps()} aria-label={field.label} />
+		{#if field.unit}
+			<span class="sme-unit">{field.unit}</span>
+		{/if}
 		<div class="sme-number-triggers">
 			<button {...api.getIncrementTriggerProps()}>▲</button>
 			<button {...api.getDecrementTriggerProps()}>▼</button>
@@ -36,6 +39,13 @@
 		display: flex;
 		align-items: stretch;
 		gap: 2px;
+	}
+
+	.sme-unit {
+		align-self: center;
+		font-size: 11px;
+		color: var(--sme-text-muted, #64748b);
+		padding: 0 2px;
 	}
 
 	.sme-number-triggers {

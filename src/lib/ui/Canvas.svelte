@@ -49,16 +49,17 @@
 	const FLIP_MS = 150;
 
 	// Built-in edit-mode views; custom blocks fall back to their registry `render`.
-	const builtinViews: Record<string, Component<{ props: never }>> = {
-		text: TextView as Component<{ props: never }>,
-		image: ImageView as Component<{ props: never }>,
-		button: ButtonView as Component<{ props: never }>,
-		divider: DividerView as Component<{ props: never }>,
-		spacer: SpacerView as Component<{ props: never }>,
-		social: SocialView as Component<{ props: never }>
+	type BlockView = Component<{ props: never; editable?: boolean }>;
+	const builtinViews: Record<string, BlockView> = {
+		text: TextView as BlockView,
+		image: ImageView as BlockView,
+		button: ButtonView as BlockView,
+		divider: DividerView as BlockView,
+		spacer: SpacerView as BlockView,
+		social: SocialView as BlockView
 	};
 
-	function viewFor(block: Block): Component<{ props: never }> | undefined {
+	function viewFor(block: Block): BlockView | undefined {
 		return builtinViews[block.type] ?? (registry.get(block.type)?.render as never);
 	}
 
@@ -251,7 +252,10 @@
 											animate:flip={{ duration: FLIP_MS }}
 										>
 											{#if View}
-												<View props={block.props as never} />
+												<View
+													props={block.props as never}
+													editable={!readonly && selectedId === block.id}
+												/>
 											{:else}
 												<div class="sme-block-fallback">{block.type}</div>
 											{/if}

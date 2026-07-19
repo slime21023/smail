@@ -245,6 +245,27 @@ try {
 	);
 	await page.screenshot({ path: `${SHOT_DIR}/5-structure.png` });
 
+	// 14. Inline edit (M5d): dblclick the button label, type, commit, undo
+	const inlineButton = page.locator('.sme-canvas [aria-label="button"]').first();
+	await inlineButton.click(); // select → arms the editable machine
+	await inlineButton.locator('[data-part="preview"]').dblclick();
+	const inlineInput = inlineButton.locator('[data-part="input"]');
+	await inlineInput.fill('INLINE EDITED');
+	await inlineInput.press('Enter');
+	await previewContains('INLINE EDITED');
+	await page.waitForTimeout(400); // let the history capture settle
+	await page.click('.sme-toolbar [aria-label="Undo"]');
+	await page.waitForFunction(
+		() =>
+			!document
+				.querySelector('.sme-preview-frame')
+				?.getAttribute('srcdoc')
+				?.includes('INLINE EDITED'),
+		{ timeout: 10000 }
+	);
+	console.log('inline edit + undo ok');
+	await page.screenshot({ path: `${SHOT_DIR}/6-inline-edit.png` });
+
 	console.log('console errors:', errors.length ? errors : 'none');
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');

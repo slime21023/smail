@@ -1,6 +1,6 @@
 # smail — 開發規格文件
 
-> 一個以 **Ark UI + Svelte** 打造、以 **MJML** 為輸出引擎的開源 EDM 模板編輯函式庫。
+> 一個以 **zag.js + Svelte** 打造、以 **MJML** 為輸出引擎的開源 EDM 模板編輯函式庫。
 > 目標：簡單易用、可嵌入、輸出跨 email client 相容的 HTML。
 
 - **文件版本**：v0.1 (Draft)
@@ -20,7 +20,7 @@
 
 1. **JSON 為唯一真實來源**（single source of truth）：所有編輯狀態以 JSON schema 表示，MJML 與 HTML 皆為衍生產物，使用者不直接編輯 MJML。
 2. **純前端優先**：預設以 `mjml-browser` 在 client 端編譯，零後端依賴。
-3. **Headless 心態**：UI 行為交給 Ark UI，樣式可被使用者覆寫，不強加設計語言。
+3. **Headless 心態**：UI 行為交給 zag.js 狀態機，樣式可被使用者覆寫，不強加設計語言。
 4. **受限佈局**：採「先選佈局、再填元件」模式，主動遵循 MJML 巢狀規則，換取可靠輸出與較低實作複雜度。
 5. **漸進增強**：核心 MVP 可獨立運作，進階功能（自訂區塊、主題、i18n）以外掛方式擴充。
 
@@ -38,7 +38,7 @@
 | 層級 | 技術 | 說明 |
 |------|------|------|
 | 框架 | Svelte 5（Runes） | 以 `$state` / `$derived` 管理響應式編輯狀態 |
-| UI 元件 | Ark UI (Svelte) | Headless 面板、Modal、Slider、Select、ColorPicker 等 |
+| UI 元件 | zag.js（@zag-js/* 狀態機 + @zag-js/svelte adapter） | Headless NumberInput、Slider、Select、ColorPicker、RadioGroup、Editable 等 |
 | 拖拽 | `svelte-dnd-action` | 同欄內區塊排序、佈局格填入 |
 | 編譯引擎 | `mjml-browser` | 瀏覽器端 MJML → HTML |
 | 打包 | Vite + SvelteKit（`svelte-package`） | 產出函式庫 dist |
@@ -48,7 +48,7 @@
 ### 2.1 相依性策略
 
 - `mjml-browser` 列為 **peerDependency**，避免版本鎖死並讓使用者控管 bundle。
-- Ark UI 的 Svelte 套件列為 dependency。
+- `@zag-js/*` 套件（統一版本，`~` 範圍鎖定 minor）列為 dependency。
 - `svelte` 列為 peerDependency。
 
 ---
@@ -58,7 +58,7 @@
 ### 3.1 資料流
 
 ```
-使用者操作 (Ark UI / svelte-dnd-action)
+使用者操作 (zag.js / svelte-dnd-action)
         │
         ▼
 編輯狀態 EditorState (JSON schema, $state)
@@ -286,12 +286,14 @@ function compile(mjml: string): CompileResult;
 
 ### 7.3 Inspector（屬性面板）
 
-- 依當前選中區塊的 `type`，從 registry 讀取其欄位定義，動態渲染 Ark UI 控制項。
+- 依當前選中區塊的 `type`，從 registry 讀取其欄位定義，動態渲染控制項（zag.js 狀態機驅動）。
 - 控制項對應：
-  - 數值（padding、fontSize）→ Ark UI Slider / NumberInput
-  - 顏色 → Ark UI ColorPicker
-  - 列舉（align、fontWeight）→ Ark UI Select / SegmentGroup
+  - 數值（padding、fontSize）→ slider / number（@zag-js/slider、@zag-js/number-input）
+  - 顏色 → color（@zag-js/color-picker）
+  - 列舉（align、fontWeight）→ select / segment（@zag-js/select、@zag-js/radio-group）
   - 文字 → textarea（text block 允許有限 inline HTML）
+- 控制系統開放：`InspectorField.component` 或編輯器 `controls` prop 可註冊自訂控制項；
+  `options` 支援 `{label, value}`；`format`/`parse` 對應儲存值與控制值的轉換。
 - 每次變更即時寫回 `EditorState`，觸發重新序列化與編譯。
 
 ### 7.4 Toolbar
@@ -375,7 +377,8 @@ const priceTag = defineBlock({
 | **M2 UI 骨架** | 三欄佈局、canvas 渲染、iframe 預覽 | 靜態 JSON 可視覺化呈現並即時預覽 |
 | **M3 互動** | Inspector 屬性編輯、svelte-dnd-action 拖拽 | 六種內建區塊可拖入、排序、編輯屬性 |
 | **M4 完善** | undo/redo、匯出、主題、TypeScript 型別 | 完整 API、發布 npm alpha |
-| **M5 開源** | 文件、範例、CI、貢獻指南 | README、demo 站、測試覆蓋率門檻 |
+| **M5 zag 重構 + 彈性** | 移除 Ark UI 改用 @zag-js/* 直接開發；開放控制系統；結構編輯（多欄、增刪欄、複製/移動）；slider/連動 padding/inline 編輯 | 零 @ark-ui 依賴；tree 操作單元測試；e2e 覆蓋結構編輯與 inline 編輯 |
+| **M6 開源** | 文件、範例、CI、貢獻指南 | README、demo 站、測試覆蓋率門檻 |
 
 ---
 
@@ -383,7 +386,7 @@ const priceTag = defineBlock({
 
 - **單元測試**：`serializeToMjml` 對各區塊型別的輸出快照（snapshot）；`compile` 的錯誤處理。
 - **相容性測試**：對代表性模板輸出，人工於 Litmus / Email on Acid 或 client 抽樣檢查（列入 CI 之外的發布前檢查清單）。
-- **元件測試**：Ark UI 控制項與狀態回寫，使用 Vitest + Testing Library。
+- **元件測試**：控制項淺層 smoke（Vitest + happy-dom；zag 互動深度交給 e2e）；tree 結構操作純函式測試。
 - **視覺回歸**：demo 模板的預覽截圖比對（可選）。
 
 ---
@@ -395,7 +398,7 @@ const priceTag = defineBlock({
 | `mjml-browser` 在 Vite/SvelteKit 打包失敗或體積過大 | **高** | M0 優先 spike；必要時提供後端編譯 fallback 作為第二方案 |
 | 拖拽自由度與 MJML 巢狀規則衝突 | 中 | 受限佈局模式，registry 強制巢狀約束 |
 | 屬性面板隨區塊增加而膨脹 | 中 | 屬性定義資料驅動，控制暴露欄位範圍 |
-| Svelte 5 Runes 生態尚新，Ark UI 相容性 | 中 | 鎖定驗證過的版本，spike 階段一併確認 |
+| zag.js minor 版本有 breaking change | 中 | 全部 @zag-js/* 鎖同一版本（`~` 範圍），升級時整批同步 |
 | Email client 相容仍有 MJML 未覆蓋的邊界 | 低 | 依賴 MJML 社群成熟度，記錄已知限制 |
 
 ---

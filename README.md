@@ -4,7 +4,7 @@
 
 Built with **Svelte 5 (runes)**, **[zag.js](https://zagjs.com)** (headless UI state machines), and **[mjml-browser](https://github.com/mjmlio/mjml)** (client-side compilation, no backend needed).
 
-**Status: alpha.** Spec milestones M0–M4 are implemented (visual editing, drag & drop, undo/redo, custom blocks, live preview, HTML/JSON export). See [`_spec.md`](./_spec.md) for the full design document.
+**Status: alpha.** Spec milestones M0–M5 are implemented (visual editing, drag & drop, undo/redo, custom blocks, live preview, HTML/JSON export, multi-column structure editing, custom inspector controls, inline text editing). See [`_spec.md`](./_spec.md) for the full design document.
 
 ## Install
 
