@@ -25,6 +25,14 @@ export {
 } from './core/registry/types.js';
 export { normalizeOptions } from './core/registry/options.js';
 export {
+	DEFAULT_DELIMITERS,
+	extractParams,
+	mergeParams,
+	substituteParams,
+	type ParamDelimiters,
+	type ParameterDef
+} from './core/params/params.js';
+export {
 	columnFields,
 	sectionFields,
 	settingsFields,

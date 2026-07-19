@@ -3,8 +3,16 @@
 	import { compile } from '../core/compiler/compile.js';
 	import type { MjmlError } from 'mjml-browser';
 	import { createRegistry, type AnyBlockDefinition } from '../core/registry/registry.js';
+	import {
+		DEFAULT_DELIMITERS,
+		extractParams,
+		mergeParams,
+		substituteParams,
+		type ParamDelimiters
+	} from '../core/params/params.js';
 	import type { StructuralFields } from '../core/registry/structural.js';
 	import type { ControlRegistry } from '../core/registry/types.js';
+	import type { ParameterDef } from '../core/schema/types.js';
 	import { createBlock, createSection } from '../core/schema/defaults.js';
 	import {
 		addColumn as addColumnOp,
@@ -37,6 +45,12 @@
 		controls?: ControlRegistry;
 		/** Override the inspector fields of section / column / document nodes. */
 		structuralFields?: StructuralFields;
+		/** Merge-field declarations (e.g. {{firstName}}). Merged over any stored in state.settings.parameters. */
+		parameters?: ParameterDef[];
+		/** Placeholder delimiters; default {{ }}. */
+		paramDelimiters?: ParamDelimiters;
+		/** Persist the merged declarations into state.settings.parameters (default true). */
+		persistParameters?: boolean;
 		theme?: ThemeTokens;
 		readonly?: boolean;
 	}
@@ -48,6 +62,9 @@
 		blocks = [],
 		controls,
 		structuralFields,
+		parameters,
+		paramDelimiters,
+		persistParameters = true,
 		theme = {},
 		readonly = false
 	}: Props = $props();
@@ -56,11 +73,46 @@
 
 	let selectedId = $state<string | null>(null);
 	let previewMode = $state<'desktop' | 'mobile'>('desktop');
+	let sampleData = $state(false);
 	let html = $state('');
 	let compileErrors = $state<MjmlError[]>([]);
 
 	let mjml = $derived(serializeToMjml(doc, registry));
 	let selectedNode = $derived(selectedId === null ? null : findNode(doc, selectedId));
+
+	// Template parameters (merge fields)
+	let delims = $derived(paramDelimiters ?? DEFAULT_DELIMITERS);
+	let effectiveParams = $derived(mergeParams(doc.settings.parameters, parameters));
+	// Only warn about undeclared placeholders when the host opted into params at
+	// all — otherwise literal {{ }} text must stay noise-free.
+	let paramsActive = $derived(
+		parameters !== undefined || (doc.settings.parameters?.length ?? 0) > 0
+	);
+	let sampleValues = $derived(
+		Object.fromEntries(
+			effectiveParams.filter((p) => p.sample !== undefined).map((p) => [p.key, p.sample!])
+		)
+	);
+	let previewHtml = $derived(sampleData ? substituteParams(html, sampleValues, delims) : html);
+	let paramWarnings = $derived(
+		paramsActive
+			? extractParams(mjml, delims)
+					.filter((key) => !effectiveParams.some((p) => p.key === key))
+					.map((key) => `Undeclared parameter: ${delims.open}${key}${delims.close}`)
+			: []
+	);
+
+	// Persist merged declarations into the document so exported templates are
+	// self-describing. Never touches mjml, so no compile churn.
+	$effect(() => {
+		if (!parameters || !persistParameters) return;
+		const merged = mergeParams(untrack(() => doc.settings.parameters), parameters);
+		untrack(() => {
+			if (JSON.stringify(doc.settings.parameters ?? []) !== JSON.stringify(merged)) {
+				doc.settings.parameters = merged;
+			}
+		});
+	});
 
 	const history = new HistoryStore();
 
@@ -184,6 +236,9 @@
 		{readonly}
 		canUndo={history.canUndo}
 		canRedo={history.canRedo}
+		hasParams={effectiveParams.length > 0}
+		{sampleData}
+		onToggleSample={(on) => (sampleData = on)}
 		onUndo={() => restore(history.undo())}
 		onRedo={() => restore(history.redo())}
 		onPreviewMode={(mode) => (previewMode = mode)}
@@ -214,7 +269,7 @@
 			/>
 		</section>
 		<section class="sme-pane sme-pane-preview" aria-label="Preview">
-			<Preview {html} errors={compileErrors} mode={previewMode} />
+			<Preview html={previewHtml} errors={compileErrors} warnings={paramWarnings} mode={previewMode} />
 		</section>
 		{#if !readonly}
 			<aside class="sme-pane sme-pane-right">

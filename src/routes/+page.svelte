@@ -43,7 +43,8 @@
 
 		const hero = createSection(1);
 		const heroText = createBlock('text');
-		heroText.props.content = '<h1 style="margin:0">Hello from <span style="color:#2563eb">smail</span></h1>';
+		heroText.props.content =
+			'<h1 style="margin:0">Hi {{firstName}}, hello from <span style="color:#2563eb">smail</span></h1>';
 		heroText.props.align = 'center';
 		heroText.props.fontSize = 18;
 		hero.columns[0].blocks.push(heroText, createBlock('divider'));
@@ -82,6 +83,10 @@
 		bind:state={template}
 		blocks={[priceTag]}
 		controls={{ swatch: SwatchControl }}
+		parameters={[
+			{ key: 'firstName', label: 'First name', sample: 'Alice' },
+			{ key: 'couponCode', label: 'Coupon', sample: 'WELCOME10' }
+		]}
 		onChange={() => changes++}
 	/>
 	<footer class="demo-footer">

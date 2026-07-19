@@ -280,6 +280,25 @@ try {
 	await previewContains('github.png');
 	console.log('social links editing ok');
 
+	// 16. Template parameters (M6b): sample-data toggle + undeclared warning
+	await previewContains('Hi {{firstName}}');
+	const sampleToggle = page.locator('.sme-toolbar button:has-text("Sample")');
+	await sampleToggle.click();
+	await previewContains('Hi Alice,');
+	await sampleToggle.click();
+	await previewContains('Hi {{firstName}}');
+	await page.click('.sme-canvas [aria-label="text"]');
+	const contentField = page
+		.locator('.sme-inspector .sme-field', { hasText: 'Content' })
+		.locator('textarea');
+	await contentField.fill('Hello {{bogusVar}}!');
+	await page.waitForFunction(
+		() =>
+			document.querySelector('.sme-preview-warnings')?.textContent?.includes('bogusVar') ?? false,
+		{ timeout: 10000 }
+	);
+	console.log('template params ok');
+
 	console.log('console errors:', errors.length ? errors : 'none');
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');

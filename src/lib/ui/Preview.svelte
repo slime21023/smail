@@ -4,10 +4,11 @@
 	interface Props {
 		html: string;
 		errors: MjmlError[];
+		warnings?: string[];
 		mode: 'desktop' | 'mobile';
 	}
 
-	let { html, errors, mode }: Props = $props();
+	let { html, errors, warnings = [], mode }: Props = $props();
 </script>
 
 <div class="sme-preview">
@@ -15,6 +16,13 @@
 		<div class="sme-preview-errors">
 			{#each errors as error, i (i)}
 				<p>{error.formattedMessage}</p>
+			{/each}
+		</div>
+	{/if}
+	{#if warnings.length > 0}
+		<div class="sme-preview-warnings">
+			{#each warnings as warning (warning)}
+				<p>{warning}</p>
 			{/each}
 		</div>
 	{/if}
@@ -65,6 +73,21 @@
 	}
 
 	.sme-preview-errors p {
+		margin: 2px 0;
+	}
+
+	.sme-preview-warnings {
+		width: 100%;
+		box-sizing: border-box;
+		padding: 8px 12px;
+		background: #fffbeb;
+		color: #b45309;
+		font-size: 12px;
+		max-height: 120px;
+		overflow-y: auto;
+	}
+
+	.sme-preview-warnings p {
 		margin: 2px 0;
 	}
 </style>

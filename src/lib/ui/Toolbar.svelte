@@ -4,6 +4,9 @@
 		readonly: boolean;
 		canUndo: boolean;
 		canRedo: boolean;
+		hasParams?: boolean;
+		sampleData?: boolean;
+		onToggleSample?: (on: boolean) => void;
 		onUndo: () => void;
 		onRedo: () => void;
 		onPreviewMode: (mode: 'desktop' | 'mobile') => void;
@@ -16,6 +19,9 @@
 		readonly,
 		canUndo,
 		canRedo,
+		hasParams = false,
+		sampleData = false,
+		onToggleSample,
 		onUndo,
 		onRedo,
 		onPreviewMode,
@@ -45,6 +51,19 @@
 			Mobile
 		</button>
 	</div>
+
+	{#if hasParams}
+		<button
+			type="button"
+			class="sme-tool"
+			class:sme-tool-active={sampleData}
+			aria-pressed={sampleData}
+			title="Preview with sample parameter values"
+			onclick={() => onToggleSample?.(!sampleData)}
+		>
+			Sample
+		</button>
+	{/if}
 
 	<div class="sme-toolbar-spacer"></div>
 

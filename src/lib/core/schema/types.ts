@@ -9,6 +9,14 @@ export type Padding = { top: number; right: number; bottom: number; left: number
 
 export type Align = 'left' | 'center' | 'right';
 
+/** A merge-field the template uses (e.g. {{firstName}}), substituted at send time. */
+export interface ParameterDef {
+	key: string;
+	label?: string;
+	/** Value substituted in the preview when "Sample data" is on. */
+	sample?: string;
+}
+
 export interface DocumentSettings {
 	/** Email content width in px (default 600). */
 	width: number;
@@ -22,6 +30,8 @@ export interface DocumentSettings {
 	linkColor: string;
 	/** Preview text (mj-preview). */
 	preheader?: string;
+	/** Declared merge-fields; makes exported templates self-describing. Never serialized to MJML. */
+	parameters?: ParameterDef[];
 }
 
 export interface EditorState {
