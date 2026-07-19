@@ -1,27 +1,57 @@
 import type { Component } from 'svelte';
 
-/** Control kinds the Inspector knows how to render (spec §7.3). */
-export type InspectorControl =
+/** Built-in control kinds the Inspector ships with (spec §7.3). */
+export type BuiltinInspectorControl =
 	| 'text'
 	| 'textarea'
 	| 'number'
 	| 'color'
 	| 'select'
 	| 'segment'
-	| 'padding';
+	| 'padding'
+	| 'slider';
+
+/**
+ * Open union: any control name registered via the editor's `controls` prop is
+ * valid. Unknown names fall back to a plain text input with a dev warning.
+ */
+export type InspectorControl = BuiltinInspectorControl | (string & {});
+
+export interface SelectOption {
+	label: string;
+	value: string;
+}
 
 export interface InspectorField {
 	/** Prop key this field edits. */
 	key: string;
 	label: string;
 	control: InspectorControl;
-	/** For 'select' / 'segment'. */
-	options?: string[];
-	/** For 'number'. */
+	/** For 'select' / 'segment'. Plain strings mean label === value. */
+	options?: (string | SelectOption)[];
+	/** For 'number' / 'slider'. */
 	min?: number;
 	max?: number;
 	step?: number;
+	/** Display suffix for 'number' / 'slider' (e.g. 'px', '%'). */
+	unit?: string;
+	/** Map the stored prop value to the control value (e.g. '50%' → 50). */
+	format?: (raw: unknown) => unknown;
+	/** Map the control value back to the stored prop value (e.g. 50 → '50%'). */
+	parse?: (value: unknown) => unknown;
+	/** Custom control component for this field alone; takes precedence over `control`. */
+	component?: Component<ControlProps>;
 }
+
+/** Contract every inspector control component implements. */
+export interface ControlProps {
+	field: InspectorField;
+	value: unknown;
+	setValue: (value: unknown) => void;
+}
+
+/** Control name → component, merged over the built-ins via the `controls` prop. */
+export type ControlRegistry = Record<string, Component<ControlProps>>;
 
 /**
  * A registered block type: how to create it, edit it, and serialize it (spec §8.4).

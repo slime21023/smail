@@ -1,29 +1,32 @@
 <script lang="ts">
-	import type { InspectorField } from '../core/registry/types.js';
-	import { builtinControls } from './controls/registry.js';
-	import TextControl from './controls/TextControl.svelte';
+	import type { ControlRegistry, InspectorField } from '../core/registry/types.js';
+	import { resolveControl } from './controls/resolve.js';
 
 	interface Props {
 		field: InspectorField;
-		/** The (reactive) props object of the selected block. Mutated in place. */
+		/** The (reactive) props object of the selected node. Mutated in place. */
 		target: Record<string, unknown>;
+		/** Editor-level custom controls (merged over built-ins by name). */
+		controls?: ControlRegistry;
 	}
 
-	let { field, target }: Props = $props();
+	let { field, target, controls }: Props = $props();
 
-	const Control = $derived.by(() => {
-		const control = builtinControls[field.control];
-		if (!control) {
-			console.warn(`[smail] Unknown inspector control "${field.control}", falling back to text.`);
-			return TextControl;
-		}
-		return control;
-	});
+	const Control = $derived(resolveControl(field, controls));
+
+	function read(): unknown {
+		const raw = target[field.key];
+		return field.format ? field.format(raw) : raw;
+	}
+
+	function write(value: unknown) {
+		target[field.key] = field.parse ? field.parse(value) : value;
+	}
 </script>
 
 <div class="sme-field">
 	<span class="sme-field-label">{field.label}</span>
-	<Control {field} value={target[field.key]} setValue={(v) => (target[field.key] = v)} />
+	<Control {field} value={read()} setValue={write} />
 </div>
 
 <style>

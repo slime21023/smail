@@ -16,9 +16,20 @@ export {
 export {
 	defineBlock,
 	type BlockDefinition,
+	type BuiltinInspectorControl,
+	type ControlProps,
+	type ControlRegistry,
 	type InspectorControl,
-	type InspectorField
+	type InspectorField,
+	type SelectOption
 } from './core/registry/types.js';
+export { normalizeOptions } from './core/registry/options.js';
+export {
+	columnFields,
+	sectionFields,
+	settingsFields,
+	type StructuralFields
+} from './core/registry/structural.js';
 export {
 	SCHEMA_VERSION,
 	createBlock,

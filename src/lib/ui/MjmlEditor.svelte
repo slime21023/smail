@@ -3,6 +3,8 @@
 	import { compile } from '../core/compiler/compile.js';
 	import type { MjmlError } from 'mjml-browser';
 	import { createRegistry, type AnyBlockDefinition } from '../core/registry/registry.js';
+	import type { StructuralFields } from '../core/registry/structural.js';
+	import type { ControlRegistry } from '../core/registry/types.js';
 	import { createBlock, createSection } from '../core/schema/defaults.js';
 	import { findNode, targetColumn } from '../core/schema/tree.js';
 	import type { BlockType, EditorState } from '../core/schema/types.js';
@@ -21,6 +23,10 @@
 		onChange?: (state: EditorState) => void;
 		onExport?: (html: string, json: string) => void;
 		blocks?: AnyBlockDefinition[];
+		/** Custom inspector controls, addressed by `InspectorField.control` name. */
+		controls?: ControlRegistry;
+		/** Override the inspector fields of section / column / document nodes. */
+		structuralFields?: StructuralFields;
 		theme?: ThemeTokens;
 		readonly?: boolean;
 	}
@@ -30,6 +36,8 @@
 		onChange,
 		onExport,
 		blocks = [],
+		controls,
+		structuralFields,
 		theme = {},
 		readonly = false
 	}: Props = $props();
@@ -187,7 +195,14 @@
 		</section>
 		{#if !readonly}
 			<aside class="sme-pane sme-pane-right">
-				<Inspector node={selectedNode} settings={doc.settings} {registry} onDelete={removeNode} />
+				<Inspector
+					node={selectedNode}
+					settings={doc.settings}
+					{registry}
+					{controls}
+					structural={structuralFields}
+					onDelete={removeNode}
+				/>
 			</aside>
 		{/if}
 	</div>

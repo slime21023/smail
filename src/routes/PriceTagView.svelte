@@ -2,6 +2,7 @@
 	interface PriceTagProps {
 		amount: number;
 		currency: string;
+		accent: string;
 	}
 
 	let { props }: { props: PriceTagProps } = $props();
@@ -9,7 +10,7 @@
 
 <div class="price-tag">
 	<span class="price-currency">{props.currency}</span>
-	<span class="price-amount">{props.amount.toLocaleString()}</span>
+	<span class="price-amount" style:color={props.accent}>{props.amount.toLocaleString()}</span>
 </div>
 
 <style>

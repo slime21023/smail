@@ -1,13 +1,21 @@
 <script lang="ts">
 	import * as select from '@zag-js/select';
 	import { normalizeProps, portal, useMachine } from '@zag-js/svelte';
+	import { normalizeOptions } from '../../core/registry/options.js';
+	import type { SelectOption } from '../../core/registry/types.js';
 	import type { ControlProps } from './types.js';
 
 	let { field, value, setValue }: ControlProps = $props();
 
 	const id = $props.id();
 
-	const collection = $derived(select.collection({ items: field.options ?? [] }));
+	const collection = $derived(
+		select.collection({
+			items: normalizeOptions(field.options),
+			itemToString: (o: SelectOption) => o.label,
+			itemToValue: (o: SelectOption) => o.value
+		})
+	);
 
 	const service = useMachine(select.machine, () => ({
 		id,
@@ -30,9 +38,9 @@
 	</div>
 	<div use:portal {...api.getPositionerProps()}>
 		<div {...api.getContentProps()} class="sme-select-content">
-			{#each collection.items as item (item)}
+			{#each collection.items as item (item.value)}
 				<div {...api.getItemProps({ item })} class="sme-select-item">
-					<span {...api.getItemTextProps({ item })}>{item}</span>
+					<span {...api.getItemTextProps({ item })}>{item.label}</span>
 					<span {...api.getItemIndicatorProps({ item })}>✓</span>
 				</div>
 			{/each}

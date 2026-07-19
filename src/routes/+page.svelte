@@ -10,18 +10,30 @@
 		type EditorState
 	} from '$lib/index.js';
 	import PriceTagView from './PriceTagView.svelte';
+	import SwatchControl from './SwatchControl.svelte';
 
 	// Custom block example (spec §8.4) — registered via the `blocks` prop.
+	// Its inspector demos M5b: {label, value} options and a custom 'swatch' control.
 	const priceTag = defineBlock({
 		type: 'priceTag',
 		label: 'Price tag',
-		defaultProps: { amount: 4900, currency: 'TWD' },
+		defaultProps: { amount: 4900, currency: 'TWD', accent: '#dc2626' },
 		inspector: [
 			{ key: 'amount', label: 'Amount', control: 'number', min: 0 },
-			{ key: 'currency', label: 'Currency', control: 'select', options: ['TWD', 'USD', 'EUR'] }
+			{
+				key: 'currency',
+				label: 'Currency',
+				control: 'select',
+				options: [
+					{ label: '新台幣 TWD', value: 'TWD' },
+					{ label: 'US Dollar USD', value: 'USD' },
+					{ label: 'Euro EUR', value: 'EUR' }
+				]
+			},
+			{ key: 'accent', label: 'Accent color', control: 'swatch' }
 		],
 		toMjml: (p) =>
-			`<mj-text align="center" font-size="28px" font-weight="bold" color="#dc2626">${p.currency} ${p.amount.toLocaleString('en-US')}</mj-text>`,
+			`<mj-text align="center" font-size="28px" font-weight="bold" color="${p.accent}">${p.currency} ${p.amount.toLocaleString('en-US')}</mj-text>`,
 		render: PriceTagView
 	});
 
@@ -66,7 +78,12 @@
 </svelte:head>
 
 <div class="demo">
-	<MjmlEditor bind:state={template} blocks={[priceTag]} onChange={() => changes++} />
+	<MjmlEditor
+		bind:state={template}
+		blocks={[priceTag]}
+		controls={{ swatch: SwatchControl }}
+		onChange={() => changes++}
+	/>
 	<footer class="demo-footer">
 		smail demo playground — {changes} change{changes === 1 ? '' : 's'} this session
 	</footer>

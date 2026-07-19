@@ -1,9 +1,12 @@
 <script lang="ts">
 	import * as radioGroup from '@zag-js/radio-group';
 	import { normalizeProps, useMachine } from '@zag-js/svelte';
+	import { normalizeOptions } from '../../core/registry/options.js';
 	import type { ControlProps } from './types.js';
 
 	let { field, value, setValue }: ControlProps = $props();
+
+	const options = $derived(normalizeOptions(field.options));
 
 	const id = $props.id();
 
@@ -20,11 +23,11 @@
 
 <div {...api.getRootProps()} class="sme-segment-root">
 	<div {...api.getIndicatorProps()} class="sme-segment-indicator"></div>
-	{#each field.options ?? [] as option (option)}
-		<label {...api.getItemProps({ value: option })} class="sme-segment-item">
-			<span {...api.getItemTextProps({ value: option })}>{option}</span>
-			<span {...api.getItemControlProps({ value: option })}></span>
-			<input {...api.getItemHiddenInputProps({ value: option })} />
+	{#each options as option (option.value)}
+		<label {...api.getItemProps({ value: option.value })} class="sme-segment-item">
+			<span {...api.getItemTextProps({ value: option.value })}>{option.label}</span>
+			<span {...api.getItemControlProps({ value: option.value })}></span>
+			<input {...api.getItemHiddenInputProps({ value: option.value })} />
 		</label>
 	{/each}
 </div>

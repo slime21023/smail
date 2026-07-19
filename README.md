@@ -67,6 +67,20 @@ const priceTag = defineBlock({
 
 Pass it via `<MjmlEditor blocks={[priceTag]} />`. Custom definitions with a built-in `type` override the built-in.
 
+### Custom inspector controls
+
+The built-in control set (`text`, `textarea`, `number`, `color`, `select`, `segment`, `padding`, `slider`) is open. Register your own by name, or per field:
+
+```svelte
+<script>
+	import SwatchControl from './SwatchControl.svelte'; // implements ControlProps
+</script>
+
+<MjmlEditor controls={{ swatch: SwatchControl }} ... />
+```
+
+A control component receives `{ field, value, setValue }` (`ControlProps`). Fields support `{ label, value }` option pairs, a `unit` suffix, and `format`/`parse` hooks to map between stored and edited values. Section/column/document fields can be overridden wholesale via the `structuralFields` prop.
+
 ### Theming
 
 All editor chrome is styled with `--sme-*` CSS variables. Override them via the `theme` prop (`{ accent: '#7c3aed', 'panel-bg': '#fafafa' }`) or plain CSS.
