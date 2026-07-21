@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "results": [
+    { "template": "newsletter", "client": "gmail-web", "status": "passed" },
+    { "template": "newsletter", "client": "apple-mail", "status": "passed" },
+    { "template": "newsletter", "client": "ios-mail", "status": "passed" },
+    { "template": "newsletter", "client": "android-gmail", "status": "passed" },
+    { "template": "newsletter", "client": "outlook-web", "status": "passed" },
+    { "template": "newsletter", "client": "outlook-windows", "status": "passed" },
+    { "template": "promotion", "client": "gmail-web", "status": "passed" },
+    { "template": "promotion", "client": "apple-mail", "status": "passed" },
+    { "template": "promotion", "client": "ios-mail", "status": "passed" },
+    { "template": "promotion", "client": "android-gmail", "status": "passed" },
+    { "template": "promotion", "client": "outlook-web", "status": "passed" },
+    { "template": "promotion", "client": "outlook-windows", "status": "passed" },
+    { "template": "transactional", "client": "gmail-web", "status": "passed" },
+    { "template": "transactional", "client": "apple-mail", "status": "passed" },
+    { "template": "transactional", "client": "ios-mail", "status": "passed" },
+    { "template": "transactional", "client": "android-gmail", "status": "passed" },
+    { "template": "transactional", "client": "outlook-web", "status": "passed" },
+    { "template": "transactional", "client": "outlook-windows", "status": "passed" }
+  ]
+}

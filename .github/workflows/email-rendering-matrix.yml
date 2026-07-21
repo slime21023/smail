@@ -1,0 +1,20 @@
+name: Email rendering matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      results_url:
+        description: Pre-signed URL to the external matrix results JSON
+        required: true
+        type: string
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run generate:matrix
+      - run: curl --fail --location '${{ inputs.results_url }}' --output matrix-results.json
+      - run: bun run verify:matrix -- matrix-results.json
