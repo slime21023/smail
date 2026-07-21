@@ -3,6 +3,10 @@
 	"version": "0.1.0-alpha.0",
 	"description": "Embeddable EDM/email template editor library for Svelte, powered by zag.js and MJML",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/slime21023/smail.git"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",

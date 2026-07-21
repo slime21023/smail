@@ -1,0 +1,48 @@
+name: Publish GitHub Package
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: '@slime21023'
+
+      - name: Verify release tag matches package version
+        shell: bash
+        run: |
+          expected="v$(node -p "require('./package.json').version")"
+          test "$GITHUB_REF_NAME" = "$expected"
+
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun run docs:check
+      - run: bun run test
+      - run: bun run build
+
+      - name: Scope package for GitHub Packages
+        shell: bash
+        run: |
+          npm pkg set name="@slime21023/smail"
+          npm pkg set repository.type=git
+          npm pkg set repository.url="git+https://github.com/${GITHUB_REPOSITORY}.git"
+          npm pkg set publishConfig.registry=https://npm.pkg.github.com
+
+      - name: Publish
+        run: npm publish --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

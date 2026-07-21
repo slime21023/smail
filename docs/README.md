@@ -11,5 +11,6 @@ This documentation describes the current `0.5` editor-state schema and `smail-te
 | [Architecture](./architecture.md) | State model, rendering pipeline, sanitization, width normalization, security model, and release checks. |
 | [Production readiness](./production-readiness.md) | Release gates and host integration checks. |
 | [External rendering matrix](./email-rendering-matrix.md) | Real email-client validation and its provider-neutral result format. |
+| [Publishing](./publishing.md) | Releasing the scoped package to GitHub Packages and installing it. |
 
 The repository-level [_spec.md](../_spec.md) remains as a compatibility entrypoint and links to the architecture guide.

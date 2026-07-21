@@ -148,7 +148,8 @@ for (const guide of [
 	'api-reference.md',
 	'architecture.md',
 	'production-readiness.md',
-	'email-rendering-matrix.md'
+	'email-rendering-matrix.md',
+	'publishing.md'
 ]) {
 	if (!docsIndex.includes(`./${guide}`)) failures.push(`docs/README.md: missing guide link ${guide}`);
 }
