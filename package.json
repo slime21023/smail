@@ -1,6 +1,6 @@
 {
 	"name": "smail",
-	"version": "0.1.0-alpha.0",
+	"version": "0.1.1",
 	"description": "Embeddable EDM/email template editor library for Svelte, powered by zag.js and MJML",
 	"license": "MIT",
 	"repository": {
