@@ -13,6 +13,10 @@ let mjmlModule: Promise<typeof import('mjml-browser')> | undefined;
 const cache = new Map<string, CompileResult>();
 const CACHE_LIMIT = 100;
 
+/**
+ * Compile MJML in a browser-like DOM with soft validation. SSR may import this
+ * module, but calling this function lazy-loads `mjml-browser` and needs DOM APIs.
+ */
 export async function compile(mjml: string): Promise<CompileResult> {
 	const cached = cache.get(mjml);
 	if (cached) return cached;
