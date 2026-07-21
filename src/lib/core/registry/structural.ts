@@ -40,6 +40,8 @@ export const columnFields: InspectorField[] = [
 ];
 
 export const settingsFields: InspectorField[] = [
+	{ key: 'templateName', label: 'Template name', control: 'text' },
+	{ key: 'subject', label: 'Email subject', control: 'text' },
 	{ key: 'width', label: 'Email width (px)', control: 'number', min: 320, max: 800 },
 	{ key: 'backgroundColor', label: 'Background', control: 'color' },
 	{ key: 'fontFamily', label: 'Font family', control: 'text' },

@@ -5,8 +5,10 @@
  * Nesting strictly mirrors MJML rules: body > section > column > leaf blocks.
  */
 
+/** Pixel padding used by MJML-compatible blocks and sections. */
 export type Padding = { top: number; right: number; bottom: number; left: number };
 
+/** Supported horizontal alignment values. */
 export type Align = 'left' | 'center' | 'right';
 
 /** A merge-field the template uses (e.g. {{firstName}}), substituted at send time. */
@@ -17,7 +19,27 @@ export interface ParameterDef {
 	sample?: string;
 }
 
+/** Optional campaign attribution stored with a reusable template. */
+export interface UTMTrackingSettings {
+	enabled: boolean;
+	source?: string;
+	medium?: string;
+	campaign?: string;
+	term?: string;
+	content?: string;
+}
+
+/** Provider-neutral campaign metadata. It never configures a sending provider. */
+export interface TrackingSettings {
+	campaignId?: string;
+	utm: UTMTrackingSettings;
+}
+
 export interface DocumentSettings {
+	/** Human-readable name used when this document is saved as a template. */
+	templateName: string;
+	/** Default email subject. Sending applications may override it. */
+	subject: string;
 	/** Email content width in px (default 600). */
 	width: number;
 	/** mj-body background-color. */
@@ -32,8 +54,11 @@ export interface DocumentSettings {
 	preheader?: string;
 	/** Declared merge-fields; makes exported templates self-describing. Never serialized to MJML. */
 	parameters?: ParameterDef[];
+	/** Campaign and provider defaults. Never serialized to MJML. */
+	tracking: TrackingSettings;
 }
 
+/** Complete editable document. MJML and HTML are derived, never persisted as the source of truth. */
 export interface EditorState {
 	/** Schema version, for future migrations. */
 	version: string;
@@ -41,12 +66,14 @@ export interface EditorState {
 	body: Section[];
 }
 
+/** Visual attributes emitted on an `mj-section`. */
 export interface SectionProps {
 	padding: Padding;
 	backgroundColor?: string;
 	backgroundUrl?: string;
 }
 
+/** A layout row containing one to four columns. */
 export interface Section {
 	id: string;
 	type: 'section';
@@ -55,12 +82,13 @@ export interface Section {
 }
 
 export interface ColumnProps {
-	/** CSS width like '50%'. Omit to let MJML split evenly. */
+	/** Percentage string. It is normalized to 5% steps totaling 100% per section. */
 	width?: string;
 	verticalAlign: 'top' | 'middle' | 'bottom';
 	backgroundColor?: string;
 }
 
+/** A vertical container for leaf blocks. */
 export interface Column {
 	id: string;
 	type: 'column';
@@ -69,7 +97,7 @@ export interface Column {
 }
 
 export interface TextBlockProps {
-	/** Limited inline HTML allowed (sanitization strategy: spec open question #2). */
+	/** Sanitized email-focused rich-text HTML; raw arbitrary HTML is not supported. */
 	content: string;
 	fontSize: number;
 	fontWeight: 'normal' | 'bold';
@@ -80,6 +108,7 @@ export interface TextBlockProps {
 	padding: Padding;
 }
 
+/** Props for an image; src and href are filtered by the built-in URL policy at serialization. */
 export interface ImageBlockProps {
 	src: string;
 	alt: string;
@@ -91,6 +120,7 @@ export interface ImageBlockProps {
 	padding: Padding;
 }
 
+/** Props for a call-to-action button; href is filtered at serialization. */
 export interface ButtonBlockProps {
 	text: string;
 	href: string;
@@ -127,6 +157,7 @@ export const SOCIAL_NETWORKS = [
 
 export type SocialNetwork = (typeof SOCIAL_NETWORKS)[number];
 
+/** One social icon and its destination URL. */
 export interface SocialElement {
 	network: SocialNetwork;
 	href: string;

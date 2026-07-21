@@ -1,4 +1,6 @@
 import { attrs, escapeXml, paddingValue, px } from '../serializer/format.js';
+import { sanitizeTextHtml } from '../text/sanitize.js';
+import { sanitizeEmailUrl } from '../security/urls.js';
 import type {
 	ButtonBlockProps,
 	DividerBlockProps,
@@ -41,7 +43,7 @@ export const textBlock = defineBlock<TextBlockProps>({
 			color: p.color,
 			'line-height': p.lineHeight,
 			padding: paddingValue(p.padding)
-		})}>${p.content}</mj-text>`
+		})}>${sanitizeTextHtml(p.content)}</mj-text>`
 });
 
 export const imageBlock = defineBlock<ImageBlockProps>({
@@ -65,10 +67,10 @@ export const imageBlock = defineBlock<ImageBlockProps>({
 	],
 	toMjml: (p) =>
 		`<mj-image${attrs({
-			src: p.src,
+			src: sanitizeEmailUrl(p.src, 'image'),
 			alt: p.alt,
 			width: p.width === undefined ? undefined : px(p.width),
-			href: p.href,
+			href: sanitizeEmailUrl(p.href, 'link'),
 			align: p.align,
 			'border-radius': p.borderRadius > 0 ? px(p.borderRadius) : undefined,
 			padding: paddingValue(p.padding)
@@ -100,7 +102,7 @@ export const buttonBlock = defineBlock<ButtonBlockProps>({
 	],
 	toMjml: (p) =>
 		`<mj-button${attrs({
-			href: p.href,
+			href: sanitizeEmailUrl(p.href, 'link'),
 			'background-color': p.backgroundColor,
 			color: p.color,
 			'border-radius': px(p.borderRadius),
@@ -172,7 +174,10 @@ export const socialBlock = defineBlock<SocialBlockProps>({
 		const elements = p.elements
 			.map(
 				(el) =>
-					`  <mj-social-element${attrs({ name: `${el.network}-noshare`, href: el.href })} />`
+				`  <mj-social-element${attrs({
+					name: `${el.network}-noshare`,
+					href: sanitizeEmailUrl(el.href, 'link')
+				})} />`
 			)
 			.join('\n');
 		const open = `<mj-social${attrs({

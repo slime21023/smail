@@ -8,6 +8,56 @@ export type NodeRef =
 
 /** Sections cap out at 4 columns (email layouts degrade beyond that). */
 export const MAX_COLUMNS = 4;
+export const COLUMN_WIDTH_STEP = 5;
+export const MIN_COLUMN_WIDTH = 10;
+const WIDTH_UNITS = 100 / COLUMN_WIDTH_STEP;
+const MIN_WIDTH_UNITS = MIN_COLUMN_WIDTH / COLUMN_WIDTH_STEP;
+
+/** Resolve any legacy or invalid widths into 5%-step percentages totaling 100. */
+export function resolveColumnWidths(columns: readonly Column[]): number[] {
+	if (columns.length === 0) return [];
+	const minimumTotal = columns.length * MIN_WIDTH_UNITS;
+	if (minimumTotal > WIDTH_UNITS) throw new Error(`Too many columns for a ${MIN_COLUMN_WIDTH}% minimum width.`);
+
+	const parsed = columns.map((column) => parseWidth(column.props.width));
+	const weights = parsed.every((width) => width !== null)
+		? parsed.map((width) => Math.max(0, width! - MIN_COLUMN_WIDTH))
+		: columns.map(() => 1);
+	const extras = distributeUnits(WIDTH_UNITS - minimumTotal, weights);
+	return extras.map((extra) => (extra + MIN_WIDTH_UNITS) * COLUMN_WIDTH_STEP);
+}
+
+/** Set one column's width and proportionally redistribute its siblings. */
+export function setColumnWidth(section: Section, columnId: string, percent: number): boolean {
+	const index = section.columns.findIndex((column) => column.id === columnId);
+	if (index < 0) return false;
+	const count = section.columns.length;
+	if (count <= 1) {
+		applyColumnWidths(section.columns, [100]);
+		return true;
+	}
+	const maxUnits = WIDTH_UNITS - (count - 1) * MIN_WIDTH_UNITS;
+	const requested = clamp(Math.round(percent / COLUMN_WIDTH_STEP), MIN_WIDTH_UNITS, maxUnits);
+	const current = resolveColumnWidths(section.columns).map((width) => width / COLUMN_WIDTH_STEP);
+	const siblingIndexes = current.map((_, siblingIndex) => siblingIndex).filter((siblingIndex) => siblingIndex !== index);
+	const siblingWeights = siblingIndexes.map((siblingIndex) => Math.max(0, current[siblingIndex] - MIN_WIDTH_UNITS));
+	const siblingExtras = distributeUnits(WIDTH_UNITS - requested - siblingIndexes.length * MIN_WIDTH_UNITS, siblingWeights);
+	const next = current.map(() => MIN_WIDTH_UNITS);
+	next[index] = requested;
+	siblingIndexes.forEach((siblingIndex, siblingPosition) => {
+		next[siblingIndex] += siblingExtras[siblingPosition];
+	});
+	applyColumnWidths(section.columns, next.map((units) => units * COLUMN_WIDTH_STEP));
+	return true;
+}
+
+/** Mutate a section into its canonical 100%-total column layout. */
+export function normalizeColumnWidths(section: Section): boolean {
+	const resolved = resolveColumnWidths(section.columns);
+	const changed = section.columns.some((column, index) => column.props.width !== `${resolved[index]}%`);
+	applyColumnWidths(section.columns, resolved);
+	return changed;
+}
 
 /** Locate a section, column, or block by id anywhere in the document tree. */
 export function findNode(state: EditorState, id: string): NodeRef | null {
@@ -100,7 +150,7 @@ export function addColumn(state: EditorState, sectionId: string, index?: number)
 	if (node.section.columns.length >= MAX_COLUMNS) return null;
 	const column = createColumn();
 	node.section.columns.splice(index ?? node.section.columns.length, 0, column);
-	for (const sibling of node.section.columns) delete sibling.props.width;
+	applyColumnWidths(node.section.columns, equalWidths(node.section.columns.length));
 	return column;
 }
 
@@ -117,8 +167,48 @@ export function removeColumn(state: EditorState, columnId: string): boolean {
 	const neighbor = section.columns[index - 1] ?? section.columns[index + 1];
 	neighbor.blocks.push(...column.blocks);
 	section.columns.splice(index, 1);
-	for (const sibling of section.columns) delete sibling.props.width;
+	normalizeColumnWidths(section);
 	return true;
+}
+
+function parseWidth(value: string | undefined): number | null {
+	if (!value || !/^\d+(?:\.\d+)?%$/.test(value)) return null;
+	const percent = Number.parseFloat(value);
+	return Number.isFinite(percent) && percent > 0 ? percent : null;
+}
+
+function distributeUnits(total: number, weights: number[]): number[] {
+	if (weights.length === 0) return [];
+	const safeTotal = Math.max(0, total);
+	const sum = weights.reduce((result, weight) => result + weight, 0);
+	const source = sum > 0 ? weights : weights.map(() => 1);
+	const sourceSum = source.reduce((result, weight) => result + weight, 0);
+	const exact = source.map((weight) => (safeTotal * weight) / sourceSum);
+	const distributed = exact.map(Math.floor);
+	let remainder = safeTotal - distributed.reduce((result, value) => result + value, 0);
+	const order = exact
+		.map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+		.sort((a, b) => b.fraction - a.fraction || a.index - b.index);
+	for (const item of order) {
+		if (remainder <= 0) break;
+		distributed[item.index]++;
+		remainder--;
+	}
+	return distributed;
+}
+
+function equalWidths(count: number): number[] {
+	return resolveColumnWidths(Array.from({ length: count }, () => ({ props: {} } as Column)));
+}
+
+function applyColumnWidths(columns: readonly Column[], widths: readonly number[]) {
+	columns.forEach((column, index) => {
+		column.props.width = `${widths[index]}%`;
+	});
+}
+
+function clamp(value: number, min: number, max: number): number {
+	return Math.min(max, Math.max(min, value));
 }
 
 /** Clone a block (fresh id) and insert it right after the original. */

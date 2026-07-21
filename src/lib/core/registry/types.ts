@@ -1,6 +1,8 @@
 import type { Component } from 'svelte';
+import type { ParamDelimiters } from '../params/params.js';
+import type { ParameterDef } from '../schema/types.js';
 
-/** Built-in control kinds the Inspector ships with (spec §7.3). */
+/** Built-in control kinds the Inspector ships with. */
 export type BuiltinInspectorControl =
 	| 'text'
 	| 'textarea'
@@ -19,6 +21,7 @@ export type BuiltinInspectorControl =
  */
 export type InspectorControl = BuiltinInspectorControl | (string & {});
 
+/** Display/value pair for select-like Inspector controls. */
 export interface SelectOption {
 	label: string;
 	value: string;
@@ -45,18 +48,32 @@ export interface InspectorField {
 	component?: Component<ControlProps>;
 }
 
-/** Contract every inspector control component implements. */
+/** Contract every Inspector control component implements. `setValue` writes the owning editable state. */
 export interface ControlProps {
 	field: InspectorField;
 	value: unknown;
 	setValue: (value: unknown) => void;
 }
 
+/**
+ * Contract for an optional Inspector-only rich text editor. `setValue` is
+ * sanitized before persistence; `createParameter` returns null for invalid keys.
+ */
+export interface TextEditorProps {
+	value: string;
+	setValue: (html: string) => void;
+	disabled: boolean;
+	parameters: ParameterDef[];
+	delimiters: ParamDelimiters;
+	createParameter: (key: string, label?: string) => ParameterDef | null;
+}
+
 /** Control name → component, merged over the built-ins via the `controls` prop. */
 export type ControlRegistry = Record<string, Component<ControlProps>>;
 
 /**
- * A registered block type: how to create it, edit it, and serialize it (spec §8.4).
+ * A registered block type. `toMjml` is trusted host code: escape user input and
+ * validate URLs before emitting MJML, because smail cannot sanitize custom output.
  */
 export interface BlockDefinition<P = Record<string, unknown>> {
 	type: string;
@@ -69,6 +86,7 @@ export interface BlockDefinition<P = Record<string, unknown>> {
 	render?: Component<{ props: P }>;
 }
 
+/** Type-preserving helper for declaring a custom block definition. */
 export function defineBlock<P>(definition: BlockDefinition<P>): BlockDefinition<P> {
 	return definition;
 }

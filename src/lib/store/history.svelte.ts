@@ -56,4 +56,10 @@ export class HistoryStore {
 		this.#past = [...this.#past, entry];
 		return structuredClone(entry.state);
 	}
+
+	/** Drop snapshots after replacing the entire document (for example, import). */
+	clear(): void {
+		this.#past = [];
+		this.#future = [];
+	}
 }

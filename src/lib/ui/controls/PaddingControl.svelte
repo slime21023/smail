@@ -3,6 +3,7 @@
 	import { normalizeProps, useMachine } from '@zag-js/svelte';
 	import type { Padding } from '../../core/schema/types.js';
 	import type { ControlProps } from './types.js';
+	import { getWheelAdjustedValue } from './wheel.js';
 
 	let { field, value, setValue }: ControlProps = $props();
 
@@ -30,6 +31,14 @@
 		}
 	}
 
+	function handleWheel(side: (typeof sides)[number], event: WheelEvent) {
+		const current = pad()[side] ?? 0;
+		const next = getWheelAdjustedValue(current, event.deltaY, { min: 0 });
+		if (next === current) return;
+		event.preventDefault();
+		setSide(side, next);
+	}
+
 	const services = sides.map((side) =>
 		useMachine(numberInput.machine, () => ({
 			id: `${id}-${side}`,
@@ -51,7 +60,11 @@
 		{#each sides as side, i (side)}
 			<div class="sme-padding-side">
 				<span>{side[0].toUpperCase()}</span>
-				<input {...apis[i].getInputProps()} aria-label="{field.label} {side}" />
+				<input
+					{...apis[i].getInputProps()}
+					aria-label="{field.label} {side}"
+					onwheel={(event) => handleWheel(side, event)}
+				/>
 			</div>
 		{/each}
 	</div>

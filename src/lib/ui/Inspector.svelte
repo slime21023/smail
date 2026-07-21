@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { Component } from 'svelte';
+	import type { ParamDelimiters } from '../core/params/params.js';
 	import type { BlockRegistry } from '../core/registry/registry.js';
 	import {
 		columnFields,
@@ -6,10 +8,15 @@
 		settingsFields,
 		type StructuralFields
 	} from '../core/registry/structural.js';
-	import type { ControlRegistry } from '../core/registry/types.js';
+	import type { ControlRegistry, TextEditorProps } from '../core/registry/types.js';
 	import type { NodeRef } from '../core/schema/tree.js';
-	import type { DocumentSettings } from '../core/schema/types.js';
+	import type { DocumentSettings, ParameterDef, TextBlockProps } from '../core/schema/types.js';
+	import { sanitizeTextHtml } from '../core/text/sanitize.js';
 	import FieldControl from './FieldControl.svelte';
+	import ColumnWidthControl from './ColumnWidthControl.svelte';
+	import InspectorTextEditor from './InspectorTextEditor.svelte';
+	import ParameterManager from './ParameterManager.svelte';
+	import TrackingSettings from './TrackingSettings.svelte';
 
 	import { MAX_COLUMNS } from '../core/schema/tree.js';
 
@@ -20,8 +27,14 @@
 		onDelete: (id: string) => void;
 		onAddColumn: (sectionId: string) => void;
 		onRemoveColumn: (columnId: string) => void;
+		onSetColumnWidth: (columnId: string, percent: number) => void;
 		controls?: ControlRegistry;
 		structural?: StructuralFields;
+		textEditor?: Component<TextEditorProps>;
+		parameters: ParameterDef[];
+		hostParameters: ParameterDef[];
+		delimiters: ParamDelimiters;
+		createParameter: (key: string, label?: string) => ParameterDef | null;
 	}
 
 	let {
@@ -31,9 +44,17 @@
 		onDelete,
 		onAddColumn,
 		onRemoveColumn,
+		onSetColumnWidth,
 		controls,
-		structural = {}
+		structural = {},
+		textEditor,
+		parameters,
+		hostParameters,
+		delimiters,
+		createParameter
 	}: Props = $props();
+
+	let TextEditor = $derived(textEditor ?? InspectorTextEditor);
 
 	let heading = $derived(
 		node === null
@@ -46,13 +67,17 @@
 	);
 
 	let fields = $derived(
-		node === null
+		(node === null
 			? (structural.settings ?? settingsFields)
 			: node.kind === 'section'
 				? (structural.section ?? sectionFields)
 				: node.kind === 'column'
 					? (structural.column ?? columnFields)
-					: (registry.get(node.block.type)?.inspector ?? [])
+					: (registry.get(node.block.type)?.inspector ?? [])).filter(
+			(field) =>
+				!(node?.kind === 'block' && node.block.type === 'text' && field.key === 'content') &&
+				!(node?.kind === 'column' && field.key === 'width')
+		)
 	);
 
 	let target = $derived(
@@ -77,6 +102,11 @@
 
 	// The last column of a section cannot be deleted (tree.removeColumn refuses).
 	let deleteDisabled = $derived(node?.kind === 'column' && node.section.columns.length <= 1);
+
+	function setTextContent(value: string) {
+		if (node?.kind !== 'block' || node.block.type !== 'text') return;
+		(node.block.props as TextBlockProps).content = sanitizeTextHtml(value);
+	}
 </script>
 
 <div class="sme-inspector">
@@ -95,9 +125,32 @@
 		</div>
 	{/if}
 
+	{#if node?.kind === 'column'}
+		<ColumnWidthControl section={node.section} column={node.column} onSetWidth={onSetColumnWidth} />
+	{/if}
+
 	{#each fields as field (field.key)}
 		<FieldControl {field} {target} {controls} />
 	{/each}
+
+	{#if node?.kind === 'block' && node.block.type === 'text'}
+		<div class="sme-text-editor-field">
+			<span class="sme-inspector-heading">Content</span>
+			<TextEditor
+				value={node.block.props.content}
+				setValue={setTextContent}
+				disabled={false}
+				{parameters}
+				{delimiters}
+				{createParameter}
+			/>
+		</div>
+	{/if}
+
+	{#if node === null}
+		<TrackingSettings {settings} />
+		<ParameterManager {settings} {hostParameters} />
+	{/if}
 
 	{#if node?.kind === 'column'}
 		<button
@@ -132,6 +185,8 @@
 		letter-spacing: 0.08em;
 		color: var(--sme-text-muted, #64748b);
 	}
+
+	.sme-text-editor-field { display: flex; flex-direction: column; gap: 4px; }
 
 	.sme-columns-row {
 		display: flex;

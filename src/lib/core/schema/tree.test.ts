@@ -10,7 +10,9 @@ import {
 	moveBlock,
 	moveSection,
 	removeColumn,
-	removeNode
+	removeNode,
+	resolveColumnWidths,
+	setColumnWidth
 } from './tree.js';
 import type { EditorState } from './types.js';
 
@@ -72,14 +74,40 @@ describe('sections', () => {
 });
 
 describe('columns', () => {
-	it('addColumn appends and clears explicit widths', () => {
+	it('resolves every layout to 5% steps totaling 100%', () => {
+		const section = createSection(3);
+		expect(resolveColumnWidths(section.columns)).toEqual([35, 35, 30]);
+		section.columns[0].props.width = '70%';
+		section.columns[1].props.width = '30%';
+		section.columns[2].props.width = '20%';
+		const widths = resolveColumnWidths(section.columns);
+		expect(widths.reduce((sum, width) => sum + width, 0)).toBe(100);
+		expect(widths.every((width) => width >= 10 && width % 5 === 0)).toBe(true);
+	});
+
+	it('sets a width and redistributes remaining columns proportionally', () => {
+		const section = createSection(3);
+		section.columns[0].props.width = '50%';
+		section.columns[1].props.width = '30%';
+		section.columns[2].props.width = '20%';
+		expect(setColumnWidth(section, section.columns[0].id, 60)).toBe(true);
+		expect(section.columns.map((column) => column.props.width)).toEqual(['60%', '25%', '15%']);
+	});
+
+	it('enforces the 10% minimum width while resizing', () => {
+		const section = createSection(4);
+		setColumnWidth(section, section.columns[0].id, 100);
+		expect(section.columns.map((column) => column.props.width)).toEqual(['70%', '10%', '10%', '10%']);
+	});
+
+	it('addColumn appends and distributes equal explicit widths', () => {
 		const state = fixture();
 		const section = state.body[1];
 		section.columns[0].props.width = '70%';
 		const column = addColumn(state, section.id);
 		expect(column).not.toBeNull();
 		expect(section.columns).toHaveLength(3);
-		expect(section.columns[0].props.width).toBeUndefined();
+		expect(section.columns.map((item) => item.props.width)).toEqual(['35%', '35%', '30%']);
 	});
 
 	it('addColumn refuses beyond MAX_COLUMNS', () => {

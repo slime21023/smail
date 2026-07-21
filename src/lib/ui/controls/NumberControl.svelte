@@ -2,6 +2,7 @@
 	import * as numberInput from '@zag-js/number-input';
 	import { normalizeProps, useMachine } from '@zag-js/svelte';
 	import type { ControlProps } from './types.js';
+	import { getWheelAdjustedValue } from './wheel.js';
 
 	let { field, value, setValue }: ControlProps = $props();
 
@@ -19,11 +20,19 @@
 	}));
 
 	const api = $derived(numberInput.connect(service, normalizeProps));
+
+	function handleWheel(event: WheelEvent) {
+		const current = Number(value ?? 0);
+		const next = getWheelAdjustedValue(current, event.deltaY, field);
+		if (next === current) return;
+		event.preventDefault();
+		setValue(next);
+	}
 </script>
 
 <div {...api.getRootProps()}>
 	<div {...api.getControlProps()} class="sme-number-control">
-		<input {...api.getInputProps()} aria-label={field.label} />
+		<input {...api.getInputProps()} aria-label={field.label} onwheel={handleWheel} />
 		{#if field.unit}
 			<span class="sme-unit">{field.unit}</span>
 		{/if}

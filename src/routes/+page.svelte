@@ -5,37 +5,9 @@
 		createColumn,
 		createEmptyState,
 		createSection,
-		defineBlock,
 		newId,
 		type EditorState
 	} from '$lib/index.js';
-	import PriceTagView from './PriceTagView.svelte';
-	import SwatchControl from './SwatchControl.svelte';
-
-	// Custom block example (spec §8.4) — registered via the `blocks` prop.
-	// Its inspector demos M5b: {label, value} options and a custom 'swatch' control.
-	const priceTag = defineBlock({
-		type: 'priceTag',
-		label: 'Price tag',
-		defaultProps: { amount: 4900, currency: 'TWD', accent: '#dc2626' },
-		inspector: [
-			{ key: 'amount', label: 'Amount', control: 'number', min: 0 },
-			{
-				key: 'currency',
-				label: 'Currency',
-				control: 'select',
-				options: [
-					{ label: '新台幣 TWD', value: 'TWD' },
-					{ label: 'US Dollar USD', value: 'USD' },
-					{ label: 'Euro EUR', value: 'EUR' }
-				]
-			},
-			{ key: 'accent', label: 'Accent color', control: 'swatch' }
-		],
-		toMjml: (p) =>
-			`<mj-text align="center" font-size="28px" font-weight="bold" color="${p.accent}">${p.currency} ${p.amount.toLocaleString('en-US')}</mj-text>`,
-		render: PriceTagView
-	});
 
 	function demoState(): EditorState {
 		const state = createEmptyState();
@@ -44,7 +16,7 @@
 		const hero = createSection(1);
 		const heroText = createBlock('text');
 		heroText.props.content =
-			'<h1 style="margin:0">Hi {{firstName}}, hello from <span style="color:#2563eb">smail</span></h1>';
+			'<h1>Hi {{firstName}}, hello from smail</h1>';
 		heroText.props.align = 'center';
 		heroText.props.fontSize = 18;
 		hero.columns[0].blocks.push(heroText, createBlock('divider'));
@@ -81,8 +53,6 @@
 <div class="demo">
 	<MjmlEditor
 		bind:state={template}
-		blocks={[priceTag]}
-		controls={{ swatch: SwatchControl }}
 		parameters={[
 			{ key: 'firstName', label: 'First name', sample: 'Alice' },
 			{ key: 'couponCode', label: 'Coupon', sample: 'WELCOME10' }

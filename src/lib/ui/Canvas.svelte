@@ -4,6 +4,7 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import type { BlockRegistry } from '../core/registry/registry.js';
 	import { newId } from '../core/schema/defaults.js';
+	import { resolveColumnWidths } from '../core/schema/tree.js';
 	import type { Block, Column, Section } from '../core/schema/types.js';
 	import ButtonView from './blocks/ButtonView.svelte';
 	import DividerView from './blocks/DividerView.svelte';
@@ -147,6 +148,7 @@
 			onfinalize={finalizeSections}
 		>
 			{#each body as section (section.id)}
+				{@const columnWidths = resolveColumnWidths(section.columns)}
 				<div
 					class="sme-node sme-section"
 					class:sme-selected={selectedId === section.id}
@@ -210,7 +212,7 @@
 						</div>
 					{/if}
 					<div class="sme-columns">
-						{#each section.columns as column (column.id)}
+						{#each section.columns as column, columnIndex (column.id)}
 							<div
 								class="sme-node sme-column"
 								class:sme-selected={selectedId === column.id}
@@ -219,7 +221,7 @@
 								aria-label="Column"
 								onclick={(e) => select(e, column.id)}
 								onkeydown={(e) => selectKeydown(e, column.id)}
-								style:flex={column.props.width ? `0 0 ${column.props.width}` : '1 1 0'}
+								style:flex={`0 0 ${columnWidths[columnIndex]}%`}
 								style:align-self={column.props.verticalAlign === 'middle'
 									? 'center'
 									: column.props.verticalAlign === 'bottom'

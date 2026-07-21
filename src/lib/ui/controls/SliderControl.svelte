@@ -2,6 +2,7 @@
 	import * as slider from '@zag-js/slider';
 	import { normalizeProps, useMachine } from '@zag-js/svelte';
 	import type { ControlProps } from './types.js';
+	import { getWheelAdjustedValue } from './wheel.js';
 
 	let { field, value, setValue }: ControlProps = $props();
 
@@ -19,9 +20,17 @@
 	}));
 
 	const api = $derived(slider.connect(service, normalizeProps));
+
+	function handleWheel(event: WheelEvent) {
+		const current = Number(value ?? field.min ?? 0);
+		const next = getWheelAdjustedValue(current, event.deltaY, field);
+		if (next === current) return;
+		event.preventDefault();
+		setValue(next);
+	}
 </script>
 
-<div {...api.getRootProps()} class="sme-slider">
+<div {...api.getRootProps()} class="sme-slider" onwheel={handleWheel}>
 	<div {...api.getControlProps()} class="sme-slider-control">
 		<div {...api.getTrackProps()} class="sme-slider-track">
 			<div {...api.getRangeProps()} class="sme-slider-range"></div>

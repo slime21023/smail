@@ -20,6 +20,11 @@ function placeholderPattern(delimiters: ParamDelimiters): RegExp {
 	);
 }
 
+/** Whether a key can be used in a merge-field placeholder. */
+export function isValidParameterKey(key: string): boolean {
+	return /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/.test(key);
+}
+
 /**
  * Unique placeholder keys in first-occurrence order. To scan a whole document,
  * pass `serializeToMjml(state, registry)` — every user-visible string ends up

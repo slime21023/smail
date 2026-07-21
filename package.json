@@ -10,6 +10,9 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"e2e": "node scripts/e2e.mjs",
+		"generate:matrix": "bun scripts/generate-email-matrix.mjs",
+		"verify:matrix": "bun scripts/verify-email-matrix.mjs",
+		"docs:check": "node scripts/check-docs.mjs",
 		"prepare": "svelte-kit sync || echo ''",
 		"prepack": "svelte-kit sync && svelte-package && publint",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -41,6 +44,7 @@
 		"@sveltejs/kit": "^2.63.0",
 		"@sveltejs/package": "^2.5.8",
 		"@sveltejs/vite-plugin-svelte": "^7.1.2",
+		"@types/sanitize-html": "^2.16.1",
 		"happy-dom": "^20.10.6",
 		"mjml-browser": "4.18.0",
 		"playwright-core": "^1.61.1",
@@ -69,6 +73,7 @@
 		"@zag-js/select": "~1.41.2",
 		"@zag-js/slider": "~1.41.2",
 		"@zag-js/svelte": "~1.41.2",
+		"sanitize-html": "^2.17.6",
 		"svelte-dnd-action": "^0.9.74"
 	}
 }

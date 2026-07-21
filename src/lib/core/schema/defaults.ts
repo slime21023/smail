@@ -1,7 +1,21 @@
 import { defaultRegistry, type BlockRegistry } from '../registry/registry.js';
-import type { Block, BlockType, Column, DocumentSettings, EditorState, Section } from './types.js';
+import type {
+	Block,
+	BlockType,
+	Column,
+	DocumentSettings,
+	EditorState,
+	Section,
+	TrackingSettings
+} from './types.js';
 
-export const SCHEMA_VERSION = '0.1';
+export const SCHEMA_VERSION = '0.5';
+
+export function createDefaultTrackingSettings(): TrackingSettings {
+	return {
+		utm: { enabled: false }
+	};
+}
 
 export function newId(): string {
 	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -12,11 +26,14 @@ export function newId(): string {
 
 export function createDefaultSettings(): DocumentSettings {
 	return {
+		templateName: 'Untitled template',
+		subject: '',
 		width: 600,
 		backgroundColor: '#f4f4f4',
 		fontFamily: 'Arial, sans-serif',
 		textColor: '#333333',
-		linkColor: '#2563eb'
+		linkColor: '#2563eb',
+		tracking: createDefaultTrackingSettings()
 	};
 }
 

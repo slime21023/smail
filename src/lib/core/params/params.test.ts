@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createBlock, createEmptyState, createSection } from '../schema/defaults.js';
 import { serializeToMjml } from '../serializer/serializeToMjml.js';
-import { DEFAULT_DELIMITERS, extractParams, mergeParams, substituteParams } from './params.js';
+import { DEFAULT_DELIMITERS, extractParams, isValidParameterKey, mergeParams, substituteParams } from './params.js';
 
 describe('extractParams', () => {
 	it('returns unique keys in first-occurrence order', () => {
@@ -93,5 +93,14 @@ describe('settings.parameters serialization inertness', () => {
 describe('DEFAULT_DELIMITERS', () => {
 	it('is the {{ }} pair', () => {
 		expect(DEFAULT_DELIMITERS).toEqual({ open: '{{', close: '}}' });
+	});
+});
+
+describe('isValidParameterKey', () => {
+	it('accepts merge-field keys and rejects invalid names', () => {
+		expect(isValidParameterKey('user.name')).toBe(true);
+		expect(isValidParameterKey('coupon-code')).toBe(true);
+		expect(isValidParameterKey('not a key')).toBe(false);
+		expect(isValidParameterKey('')).toBe(false);
 	});
 });

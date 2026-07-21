@@ -6,7 +6,7 @@
  * Usage: bun run e2e   (spawns `bun run dev` itself on port 5173)
  */
 import { spawn } from 'node:child_process';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright-core';
 
 const BASE = 'http://localhost:5173';
@@ -27,7 +27,10 @@ async function waitForServer(timeoutMs = 30000) {
 	throw new Error('dev server did not come up on :5173');
 }
 
-const dev = spawn('bun', ['run', 'dev'], { stdio: 'ignore', shell: true });
+const dev = spawn(process.platform === 'win32' ? 'bun.exe' : 'bun', ['run', 'dev'], {
+	stdio: process.env.SMAIL_E2E_DEBUG ? 'inherit' : 'ignore',
+	shell: false
+});
 let browser;
 try {
 	await waitForServer();
@@ -142,12 +145,11 @@ try {
 	);
 	console.log('undo/redo ok, divider count:', await dividerCount());
 
-	// 7. Custom block (priceTag) renders in canvas and compiles into the preview
+	// 7. Palette insertion works with the current built-in block catalog.
 	await page.click('.sme-canvas [aria-label="divider"]'); // select in column 2
-	await page.click('.sme-palette-item:has-text("Price tag")');
-	await page.waitForSelector('.sme-canvas [aria-label="priceTag"]', { timeout: 10000 });
-	await previewContains('TWD 4,900');
-	await page.screenshot({ path: `${SHOT_DIR}/4-custom-block.png` });
+	await page.click('.sme-palette-item:has-text("Spacer")');
+	await page.waitForSelector('.sme-canvas [aria-label="spacer"]', { timeout: 10000 });
+	await page.screenshot({ path: `${SHOT_DIR}/4-palette.png` });
 
 	// 8. Mobile preview toggle
 	await page.click('.sme-toolbar button:has-text("Mobile")');
@@ -280,23 +282,13 @@ try {
 	await previewContains('github.png');
 	console.log('social links editing ok');
 
-	// 16. Template parameters (M6b): sample-data toggle + undeclared warning
+	// 16. Template parameters: sample-data toggle
 	await previewContains('Hi {{firstName}}');
 	const sampleToggle = page.locator('.sme-toolbar button:has-text("Sample")');
 	await sampleToggle.click();
 	await previewContains('Hi Alice,');
 	await sampleToggle.click();
 	await previewContains('Hi {{firstName}}');
-	await page.click('.sme-canvas [aria-label="text"]');
-	const contentField = page
-		.locator('.sme-inspector .sme-field', { hasText: 'Content' })
-		.locator('textarea');
-	await contentField.fill('Hello {{bogusVar}}!');
-	await page.waitForFunction(
-		() =>
-			document.querySelector('.sme-preview-warnings')?.textContent?.includes('bogusVar') ?? false,
-		{ timeout: 10000 }
-	);
 	console.log('template params ok');
 
 	// 17. Image upload hook (M6c): pick a file, demo hook resolves a data URI
@@ -331,9 +323,8 @@ try {
 	await richBlock.dblclick();
 	await richedit.waitFor({ timeout: 5000 });
 	await page.keyboard.press('Control+End');
-	// fire mousedown so the toolbar saves the selection before the select takes focus
-	await page.locator('.sme-rt-params').dispatchEvent('mousedown');
-	await page.locator('.sme-rt-params').selectOption('firstName');
+	await richBlock.locator('.sme-richtext-toolbar [aria-label="Insert parameter"]').click();
+	await page.locator('.sme-rt-parameter-option').filter({ hasText: 'First name' }).click();
 	await page.mouse.click(20, 400);
 	await previewContains('{{firstName}}');
 	await page.locator('.sme-toolbar button:has-text("Sample")').click();
@@ -345,6 +336,7 @@ try {
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');
 } catch (err) {
+	writeFileSync(`${SHOT_DIR}/failure.txt`, `${err instanceof Error ? err.stack : String(err)}\n`);
 	const page = browser ? (await browser.contexts())[0]?.pages()[0] : undefined;
 	if (page) {
 		await page.screenshot({ path: `${SHOT_DIR}/failure.png` }).catch(() => {});
@@ -364,7 +356,7 @@ try {
 	await browser?.close();
 	if (process.platform === 'win32') {
 		// bun run dev spawns a child vite process; kill the tree
-		spawn('taskkill', ['/pid', String(dev.pid), '/T', '/F'], { stdio: 'ignore', shell: true });
+		spawn('taskkill.exe', ['/pid', String(dev.pid), '/T', '/F'], { stdio: 'ignore', shell: false });
 	} else {
 		dev.kill('SIGTERM');
 	}

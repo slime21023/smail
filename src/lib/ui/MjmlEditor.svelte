@@ -1,17 +1,26 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { compile } from '../core/compiler/compile.js';
+	import { exportEmail, type EmailExport } from '../core/template/exportEmail.js';
+	import {
+		createTemplateFile,
+		parseTemplateFile,
+		serializeTemplateFile,
+		type TemplateFile
+	} from '../core/template/template.js';
 	import type { MjmlError } from 'mjml-browser';
 	import { createRegistry, type AnyBlockDefinition } from '../core/registry/registry.js';
 	import {
 		DEFAULT_DELIMITERS,
 		extractParams,
+		isValidParameterKey,
 		mergeParams,
 		substituteParams,
 		type ParamDelimiters
 	} from '../core/params/params.js';
 	import type { StructuralFields } from '../core/registry/structural.js';
-	import type { ControlRegistry } from '../core/registry/types.js';
+	import type { ControlRegistry, TextEditorProps } from '../core/registry/types.js';
+	import type { Component } from 'svelte';
 	import type { ParameterDef } from '../core/schema/types.js';
 	import { createBlock, createSection } from '../core/schema/defaults.js';
 	import {
@@ -23,6 +32,7 @@
 		moveSection as moveSectionOp,
 		removeColumn as removeColumnOp,
 		removeNode as removeNodeOp,
+		setColumnWidth as setColumnWidthOp,
 		targetColumn
 	} from '../core/schema/tree.js';
 	import type { BlockType, EditorState } from '../core/schema/types.js';
@@ -38,12 +48,21 @@
 	import './theme.css';
 
 	interface Props {
+		/** Controlled document; use `bind:state` when the host owns the mutable value. */
 		state: EditorState;
+		/** Called after a user-initiated document change, not during the initial render. */
 		onChange?: (state: EditorState) => void;
+		/** Legacy HTML + bare state JSON callback. */
 		onExport?: (html: string, json: string) => void;
+		/** Receives a versioned file instead of triggering the default template download. */
+		onTemplateExport?: (file: TemplateFile) => void;
+		/** Receives fresh compiled delivery output whenever Export HTML is chosen. */
+		onDeliveryExport?: (exported: EmailExport) => void;
 		blocks?: AnyBlockDefinition[];
 		/** Custom inspector controls, addressed by `InspectorField.control` name. */
 		controls?: ControlRegistry;
+		/** Inspector-only replacement for the built-in rich text editor. */
+		textEditor?: Component<TextEditorProps>;
 		/** Override the inspector fields of section / column / document nodes. */
 		structuralFields?: StructuralFields;
 		/** Merge-field declarations (e.g. {{firstName}}). Merged over any stored in state.settings.parameters. */
@@ -54,7 +73,9 @@
 		persistParameters?: boolean;
 		/** When provided, the image inspector offers an Upload button; resolve to the hosted URL. */
 		onImageUpload?: (file: File) => Promise<string>;
+		/** Token keys map to `--sme-<key>` on this editor root. */
 		theme?: ThemeTokens;
+		/** Hides mutation controls and import while retaining preview and export. */
 		readonly?: boolean;
 	}
 
@@ -62,8 +83,11 @@
 		state: doc = $bindable(),
 		onChange,
 		onExport,
+		onTemplateExport,
+		onDeliveryExport,
 		blocks = [],
 		controls,
+		textEditor,
 		structuralFields,
 		parameters,
 		paramDelimiters,
@@ -80,6 +104,7 @@
 	let sampleData = $state(false);
 	let html = $state('');
 	let compileErrors = $state<MjmlError[]>([]);
+	let importError = $state<string | undefined>();
 
 	let mjml = $derived(serializeToMjml(doc, registry));
 	let selectedNode = $derived(selectedId === null ? null : findNode(doc, selectedId));
@@ -120,6 +145,16 @@
 
 	const history = new HistoryStore();
 
+	function createParameter(key: string, label?: string): ParameterDef | null {
+		const normalized = key.trim();
+		if (!isValidParameterKey(normalized)) return null;
+		const existing = effectiveParams.find((parameter) => parameter.key === normalized);
+		if (existing) return existing;
+		const created: ParameterDef = { key: normalized, label: label?.trim() || normalized };
+		doc.settings.parameters = [...(doc.settings.parameters ?? []), created];
+		return created;
+	}
+
 	// Live via getters — context itself must be set exactly once, at init.
 	setEditorContext({
 		get onImageUpload() {
@@ -130,6 +165,9 @@
 		},
 		get delimiters() {
 			return delims;
+		},
+		createParameter(key, label) {
+			return createParameter(key, label);
 		}
 	});
 
@@ -220,6 +258,11 @@
 		if (removeColumnOp(doc, columnId)) selectedId = null;
 	}
 
+	function setColumnWidth(columnId: string, percent: number) {
+		const node = findNode(doc, columnId);
+		if (node?.kind === 'column') setColumnWidthOp(node.section, columnId, percent);
+	}
+
 	function download(filename: string, content: string, type: string) {
 		const url = URL.createObjectURL(new Blob([content], { type }));
 		const anchor = document.createElement('a');
@@ -231,17 +274,40 @@
 
 	async function exportHtml() {
 		// Compile fresh so exports never ship a stale (debounced) preview.
-		const result = await compile(mjml);
+		const result = await exportEmail(doc, { registry });
 		const json = JSON.stringify(doc, null, 2);
-		if (onExport) {
-			onExport(result.html, json);
-		} else {
+		onDeliveryExport?.(result);
+		if (onExport) onExport(result.html, json);
+		if (!onExport && !onDeliveryExport) {
 			download('email.html', result.html, 'text/html');
 		}
 	}
 
 	function exportJson() {
 		download('email.json', JSON.stringify(doc, null, 2), 'application/json');
+	}
+
+	function exportTemplate() {
+		const file = createTemplateFile(doc);
+		if (onTemplateExport) onTemplateExport(file);
+		else download('email.smail.json', serializeTemplateFile(doc), 'application/json');
+	}
+
+	async function importTemplate(file: File) {
+		if (readonly) return;
+		try {
+			const result = parseTemplateFile(await file.text(), { registry });
+			if (!result.ok) {
+				importError = result.errors.map((error) => `${error.path}: ${error.message}`).join(' ');
+				return;
+			}
+			importError = undefined;
+			doc = result.value.state;
+			selectedId = null;
+			history.clear();
+		} catch {
+			importError = 'Unable to read this template file.';
+		}
 	}
 </script>
 
@@ -259,8 +325,11 @@
 		onUndo={() => restore(history.undo())}
 		onRedo={() => restore(history.redo())}
 		onPreviewMode={(mode) => (previewMode = mode)}
+		onImportTemplate={importTemplate}
+		onExportTemplate={exportTemplate}
 		onExportHtml={exportHtml}
 		onExportJson={exportJson}
+		{importError}
 	/>
 	<div class="sme-main">
 		{#if !readonly}
@@ -295,10 +364,16 @@
 					settings={doc.settings}
 					{registry}
 					{controls}
+					{textEditor}
+					parameters={effectiveParams}
+					hostParameters={parameters ?? []}
+					delimiters={delims}
+					{createParameter}
 					structural={structuralFields}
 					onDelete={removeNode}
 					onAddColumn={addColumn}
 					onRemoveColumn={removeColumn}
+					onSetColumnWidth={setColumnWidth}
 				/>
 			</aside>
 		{/if}

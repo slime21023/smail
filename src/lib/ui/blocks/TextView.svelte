@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { paddingValue } from '../../core/serializer/format.js';
+	import { sanitizeTextHtml } from '../../core/text/sanitize.js';
 	import type { TextBlockProps } from '../../core/schema/types.js';
 	import { getEditorContext } from '../context.js';
 	import RichTextToolbar from './RichTextToolbar.svelte';
@@ -9,13 +10,11 @@
 
 	const { delimiters } = getEditorContext();
 
-	// Inline WYSIWYG editing on a contenteditable surface. dblclick to edit,
-	// Escape reverts, blur/Ctrl+Enter commits. Live sync keeps the preview pane
-	// current; the 300ms history debounce coalesces a typing burst into one
-	// undo entry. Content is NOT sanitized (spec open question #2): it stays
-	// trusted user-authored HTML, same trust model as the Inspector textarea.
-	// execCommand is deprecated but universal; all calls live in this file and
-	// RichTextToolbar so a Range-based swap stays a two-file change.
+	// Inline WYSIWYG editing: double-click starts, Escape restores the sanitized
+	// initial draft, and blur/Ctrl+Enter commits. Live sync updates preview while
+	// the editor history debounce coalesces a typing burst into one undo entry.
+	// execCommand is deprecated but remains broadly available; keeping calls here
+	// and in RichTextToolbar makes a future Range-based replacement localized.
 	let editing = $state(false);
 	let draftBefore = '';
 	let surface = $state<HTMLElement | null>(null);
@@ -24,27 +23,28 @@
 
 	async function startEdit() {
 		if (!editable || editing) return;
-		draftBefore = props.content;
+		draftBefore = sanitizeTextHtml(props.content);
 		editing = true;
 		await tick();
 		if (!surface) return;
 		// Imperative seed — a reactive innerHTML binding would reset the caret
 		// on every keystroke.
-		surface.innerHTML = props.content;
+		surface.innerHTML = draftBefore;
 		surface.focus();
 		document.execCommand('styleWithCSS', false, 'false');
 	}
 
 	function sync() {
-		if (surface) props.content = surface.innerHTML;
+		if (surface) props.content = sanitizeTextHtml(surface.innerHTML);
 	}
 
 	function commit() {
+		sync();
 		editing = false;
 	}
 
 	function revert() {
-		props.content = draftBefore;
+		props.content = sanitizeTextHtml(draftBefore);
 		editing = false;
 	}
 
@@ -77,9 +77,16 @@
 		sel?.addRange(savedRange);
 	}
 
-	function runCommand(cmd: 'bold' | 'italic') {
+	function runCommand(cmd: 'bold' | 'italic' | 'underline' | 'insertUnorderedList' | 'insertOrderedList' | 'unlink') {
 		surface?.focus();
 		document.execCommand(cmd);
+		sync();
+	}
+
+	function formatBlock(tag: 'p' | 'h1' | 'h2' | 'h3') {
+		surface?.focus();
+		restoreRange();
+		document.execCommand('formatBlock', false, tag);
 		sync();
 	}
 
@@ -112,6 +119,7 @@
 		<div class="sme-richtext-wrap" bind:this={wrap}>
 			<RichTextToolbar
 				oncmd={runCommand}
+				onblock={formatBlock}
 				onlink={applyLink}
 				oninsertparam={insertParam}
 				onsaverange={saveRange}
@@ -132,7 +140,7 @@
 		</div>
 	{:else}
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- user-authored inline HTML, see spec open question #2 -->
-		{@html props.content}
+		{@html sanitizeTextHtml(props.content)}
 	{/if}
 </div>
 

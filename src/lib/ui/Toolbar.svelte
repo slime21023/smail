@@ -10,8 +10,11 @@
 		onUndo: () => void;
 		onRedo: () => void;
 		onPreviewMode: (mode: 'desktop' | 'mobile') => void;
+		onImportTemplate?: (file: File) => void | Promise<void>;
+		onExportTemplate: () => void;
 		onExportHtml: () => void;
 		onExportJson: () => void;
+		importError?: string;
 	}
 
 	let {
@@ -25,9 +28,21 @@
 		onUndo,
 		onRedo,
 		onPreviewMode,
+		onImportTemplate,
+		onExportTemplate,
 		onExportHtml,
-		onExportJson
+		onExportJson,
+		importError
 	}: Props = $props();
+
+	let fileInput = $state<HTMLInputElement>();
+
+	async function chooseFile(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (file) await onImportTemplate?.(file);
+		input.value = '';
+	}
 </script>
 
 <div class="sme-toolbar">
@@ -84,12 +99,25 @@
 			aria-label="Redo"
 			onclick={onRedo}>↪</button
 		>
+		<input
+			class="sme-file-input"
+			bind:this={fileInput}
+			type="file"
+			accept=".smail.json,application/json"
+			onchange={chooseFile}
+		/>
+		<button type="button" class="sme-tool" onclick={() => fileInput?.click()}>Import template</button>
 	{/if}
-	<button type="button" class="sme-tool" onclick={onExportJson}>Export JSON</button>
+	<button type="button" class="sme-tool" onclick={onExportTemplate}>Export template</button>
+	<button type="button" class="sme-tool" onclick={onExportJson}>Export state JSON</button>
 	<button type="button" class="sme-tool sme-tool-primary" onclick={onExportHtml}>
 		Export HTML
 	</button>
 </div>
+
+{#if importError}
+	<p class="sme-import-error" role="alert">{importError}</p>
+{/if}
 
 <style>
 	.sme-toolbar {
@@ -153,5 +181,18 @@
 	.sme-tool-primary:hover:not(:disabled) {
 		background: var(--sme-accent, #2563eb);
 		opacity: 0.9;
+	}
+
+	.sme-file-input {
+		display: none;
+	}
+
+	.sme-import-error {
+		margin: 0;
+		padding: 6px 12px;
+		font-size: 12px;
+		color: #b91c1c;
+		background: #fef2f2;
+		border-bottom: 1px solid #fecaca;
 	}
 </style>

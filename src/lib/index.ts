@@ -6,6 +6,33 @@ export { type ThemeTokens } from './ui/theme.js';
 // compile() lazy-loads mjml-browser, so only calling it requires a DOM.
 export { compile, type CompileResult } from './core/compiler/compile.js';
 export { serializeToMjml } from './core/serializer/serializeToMjml.js';
+export { sanitizeTextHtml } from './core/text/sanitize.js';
+export { sanitizeEmailUrl, type EmailUrlKind } from './core/security/urls.js';
+export {
+	BUILTIN_TEMPLATE_IDS,
+	createBuiltinTemplate,
+	type BuiltinTemplateId
+} from './templates/builtin.js';
+export {
+	createTemplateFile,
+	migrateEditorState,
+	parseTemplateFile,
+	serializeTemplateFile,
+	DEFAULT_TEMPLATE_MAX_BYTES,
+	TEMPLATE_FORMAT,
+	TEMPLATE_FORMAT_VERSION,
+	type ParseTemplateOptions,
+	type TemplateFile,
+	type TemplateParseResult,
+	type TemplateValidationIssue
+} from './core/template/template.js';
+export {
+	exportEmail,
+	mergeTracking,
+	rewriteLinksForUtm,
+	type EmailExport,
+	type EmailExportOverrides
+} from './core/template/exportEmail.js';
 export { builtinBlocks } from './core/registry/builtins.js';
 export {
 	createRegistry,
@@ -21,12 +48,14 @@ export {
 	type ControlRegistry,
 	type InspectorControl,
 	type InspectorField,
-	type SelectOption
+	type SelectOption,
+	type TextEditorProps
 } from './core/registry/types.js';
 export { normalizeOptions } from './core/registry/options.js';
 export {
 	DEFAULT_DELIMITERS,
 	extractParams,
+	isValidParameterKey,
 	mergeParams,
 	substituteParams,
 	type ParamDelimiters,
@@ -44,12 +73,15 @@ export {
 	createBlock,
 	createColumn,
 	createDefaultSettings,
+	createDefaultTrackingSettings,
 	createEmptyState,
 	createSection,
 	newId
 } from './core/schema/defaults.js';
 export {
 	MAX_COLUMNS,
+	COLUMN_WIDTH_STEP,
+	MIN_COLUMN_WIDTH,
 	addColumn,
 	cloneWithNewIds,
 	duplicateBlock,
@@ -58,8 +90,11 @@ export {
 	insertSection,
 	moveBlock,
 	moveSection,
+	normalizeColumnWidths,
 	removeColumn,
 	removeNode,
+	resolveColumnWidths,
+	setColumnWidth,
 	targetColumn,
 	type NodeRef
 } from './core/schema/tree.js';
@@ -87,5 +122,7 @@ export type {
 	SpacerBlock,
 	SpacerBlockProps,
 	TextBlock,
-	TextBlockProps
+	TextBlockProps,
+	TrackingSettings,
+	UTMTrackingSettings
 } from './core/schema/types.js';

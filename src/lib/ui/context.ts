@@ -7,11 +7,16 @@ export interface EditorContext {
 	readonly onImageUpload?: (file: File) => Promise<string>;
 	readonly parameters: ParameterDef[];
 	readonly delimiters: ParamDelimiters;
+	createParameter: (key: string, label?: string) => ParameterDef | null;
 }
 
 export const EDITOR_CTX = Symbol('smail-editor');
 
-const FALLBACK: EditorContext = { parameters: [], delimiters: DEFAULT_DELIMITERS };
+const FALLBACK: EditorContext = {
+	parameters: [],
+	delimiters: DEFAULT_DELIMITERS,
+	createParameter: () => null
+};
 
 export function setEditorContext(ctx: EditorContext): void {
 	setContext(EDITOR_CTX, ctx);

@@ -1,5 +1,6 @@
 import { defaultRegistry, type BlockRegistry } from '../registry/registry.js';
 import type { Block, Column, EditorState, Section } from '../schema/types.js';
+import { resolveColumnWidths } from '../schema/tree.js';
 import { attrs, escapeXml, indent, paddingValue, px } from './format.js';
 
 /**
@@ -42,14 +43,15 @@ function serializeSection(section: Section, registry: BlockRegistry): string {
 		'background-color': props.backgroundColor,
 		'background-url': props.backgroundUrl
 	})}>`;
-	const columns = section.columns.map((column) => serializeColumn(column, registry)).join('\n');
+	const widths = resolveColumnWidths(section.columns);
+	const columns = section.columns.map((column, index) => serializeColumn(column, registry, widths[index])).join('\n');
 	return columns ? `${open}\n${indent(columns, 1)}\n</mj-section>` : `${open}</mj-section>`;
 }
 
-function serializeColumn(column: Column, registry: BlockRegistry): string {
+function serializeColumn(column: Column, registry: BlockRegistry, width: number): string {
 	const { props } = column;
 	const open = `<mj-column${attrs({
-		width: props.width,
+		width: `${width}%`,
 		'vertical-align': props.verticalAlign,
 		'background-color': props.backgroundColor
 	})}>`;

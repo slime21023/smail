@@ -51,6 +51,20 @@ describe('NumberControl', () => {
 		expect(target.textContent).toContain('px');
 		expect(target.querySelectorAll('button')).toHaveLength(2);
 	});
+
+	it('adjusts with the mouse wheel using its configured step', () => {
+		const values: number[] = [];
+		render(
+			NumberControl,
+			{ key: 'size', label: 'Size', control: 'number', min: 0, max: 20, step: 5 },
+			10,
+			(value) => values.push(value as number)
+		);
+		const event = new WheelEvent('wheel', { deltaY: -10, cancelable: true });
+		target.querySelector('input')?.dispatchEvent(event);
+		expect(values).toEqual([15]);
+		expect(event.defaultPrevented).toBe(true);
+	});
 });
 
 describe('SliderControl', () => {
@@ -63,6 +77,20 @@ describe('SliderControl', () => {
 		expect(target.querySelector('[data-part="thumb"]')).toBeTruthy();
 		expect(target.querySelector<HTMLInputElement>('input')?.value).toBe('55');
 		expect(target.textContent).toContain('55%');
+	});
+
+	it('adjusts with the mouse wheel within its range', () => {
+		const values: number[] = [];
+		render(
+			SliderControl,
+			{ key: 'width', label: 'Width', control: 'slider', min: 10, max: 100, step: 5 },
+			100,
+			(value) => values.push(value as number)
+		);
+		const event = new WheelEvent('wheel', { deltaY: 10, cancelable: true });
+		target.querySelector('.sme-slider')?.dispatchEvent(event);
+		expect(values).toEqual([95]);
+		expect(event.defaultPrevented).toBe(true);
 	});
 });
 
@@ -108,7 +136,8 @@ describe('ImageSrcControl', () => {
 		render(ImageSrcControl, field, '', () => {}, {
 			onImageUpload: async () => 'https://cdn.example/up.png',
 			parameters: [],
-			delimiters: DEFAULT_DELIMITERS
+			delimiters: DEFAULT_DELIMITERS,
+			createParameter: () => null
 		});
 		expect(target.querySelector('.sme-upload-btn')).toBeTruthy();
 		expect(target.querySelector('.sme-upload-input')).toBeTruthy();
@@ -128,6 +157,20 @@ describe('PaddingControl', () => {
 		lock?.click();
 		flushSync();
 		expect(lock?.getAttribute('aria-pressed')).toBe('false');
+	});
+
+	it('adjusts one side with the wheel and keeps linked sides in sync', () => {
+		const values: unknown[] = [];
+		render(
+			PaddingControl,
+			{ key: 'padding', label: 'Padding', control: 'padding' },
+			{ top: 10, right: 10, bottom: 10, left: 10 },
+			(value) => values.push(value)
+		);
+		target.querySelector<HTMLInputElement>('[aria-label="Padding top"]')?.dispatchEvent(
+			new WheelEvent('wheel', { deltaY: -10, cancelable: true })
+		);
+		expect(values).toEqual([{ top: 11, right: 11, bottom: 11, left: 11 }]);
 	});
 
 	it('starts unlinked for non-uniform padding', () => {

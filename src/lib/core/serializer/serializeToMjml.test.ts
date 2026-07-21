@@ -71,6 +71,18 @@ describe('serializeToMjml', () => {
 		expect(mjml).toContain('>Buy &quot;now&quot; &amp; &lt;save&gt;</mj-button>');
 	});
 
+	it('omits unsafe built-in link and image URLs while preserving safe parameter URLs', () => {
+		const button = createBlock('button');
+		button.props.href = 'javascript:alert(1)';
+		const image = createBlock('image');
+		image.props.src = 'data:image/svg+xml;base64,PHN2Zz4=';
+		image.props.href = 'https://example.com/{{orderId}}';
+		const mjml = serializeToMjml(stateWith([button, image]));
+		expect(mjml).not.toContain('javascript:');
+		expect(mjml).not.toContain('data:image/svg');
+		expect(mjml).toContain('href="https://example.com/{{orderId}}"');
+	});
+
 	it('passes text content through as inline HTML', () => {
 		const text = createBlock('text');
 		text.props.content = 'Hello <strong>world</strong>';
@@ -85,14 +97,14 @@ describe('serializeToMjml', () => {
 		expect(mjml).not.toContain('width=" ');
 	});
 
-	it('splits columns and keeps explicit widths', () => {
+	it('normalizes columns to a complete 100% layout', () => {
 		const state = createEmptyState();
 		const section = createSection(2);
 		section.columns[0].props.width = '30%';
 		state.body = [section];
 		const mjml = serializeToMjml(state);
-		expect(mjml).toContain('<mj-column width="30%" vertical-align="top">');
-		expect(mjml).toContain('<mj-column vertical-align="top">');
+		expect(mjml).toContain('<mj-column width="50%" vertical-align="top">');
+		expect(mjml.match(/<mj-column width="50%"/g)).toHaveLength(2);
 	});
 
 	it('is deterministic for the same input', () => {
@@ -115,17 +127,17 @@ describe('serializeToMjml', () => {
 	});
 
 	it('serializes custom blocks through a custom registry', () => {
-		const priceTag = defineBlock({
-			type: 'priceTag',
-			label: 'Price tag',
-			defaultProps: { amount: 100, currency: 'TWD' },
+		const notice = defineBlock({
+			type: 'notice',
+			label: 'Notice',
+			defaultProps: { message: 'Heads up' },
 			inspector: [],
-			toMjml: (p) => `<mj-text>${p.currency} ${p.amount}</mj-text>`
+			toMjml: (p) => `<mj-text>${p.message}</mj-text>`
 		});
-		const registry = createRegistry([priceTag]);
-		const block = { id: 'p1', type: 'priceTag', props: { amount: 250, currency: 'USD' } };
+		const registry = createRegistry([notice]);
+		const block = { id: 'p1', type: 'notice', props: { message: 'Scheduled maintenance' } };
 		const mjml = serializeToMjml(stateWith([block as unknown as Block]), registry);
-		expect(mjml).toContain('<mj-text>USD 250</mj-text>');
+		expect(mjml).toContain('<mj-text>Scheduled maintenance</mj-text>');
 	});
 
 	it('lets a custom definition override a built-in type', () => {
