@@ -24,8 +24,11 @@
 		onSelect: (id: string | null) => void;
 		onAddSection: (columns: number) => void;
 		onReorderSections: (sections: Section[]) => void;
+		onReplaceColumnBlocks: (columnId: string, blocks: Block[]) => void;
 		onMoveSection: (id: string, offset: -1 | 1) => void;
 		onDuplicate: (id: string) => void;
+		onSetTextContent: (blockId: string, html: string) => void;
+		onSetButtonText: (blockId: string, text: string) => void;
 		registry: BlockRegistry;
 	}
 
@@ -40,8 +43,11 @@
 		onSelect,
 		onAddSection,
 		onReorderSections,
+		onReplaceColumnBlocks,
 		onMoveSection,
 		onDuplicate,
+		onSetTextContent,
+		onSetButtonText,
 		registry
 	}: Props = $props();
 
@@ -82,7 +88,9 @@
 	let sectionDragDisabled = $state(true);
 
 	function considerSections(e: CustomEvent<{ items: Section[] }>) {
-		onReorderSections(e.detail.items);
+		// `body` is a view-only controller snapshot. dndzone may reorder it while
+		// dragging, but only finalize writes the authoritative controller state.
+		body.splice(0, body.length, ...e.detail.items);
 	}
 
 	function finalizeSections(e: CustomEvent<{ items: Section[] }>) {
@@ -97,13 +105,14 @@
 	// Items dragged in from the palette carry a `palette-*` id and a label —
 	// turn them into real blocks with fresh ids.
 	function finalizeBlocks(column: Column, e: CustomEvent<{ items: Block[] }>) {
-		column.blocks = e.detail.items.map((item) => {
+		const blocks = e.detail.items.map((item) => {
 			if (!item.id.startsWith('palette-')) return item;
 			const { label: _label, ...block } = item as Block & { label?: string };
 			const created = { ...block, id: newId() } as Block;
 			onSelect(created.id);
 			return created;
 		});
+		onReplaceColumnBlocks(column.id, blocks);
 	}
 </script>
 
@@ -253,7 +262,19 @@
 											onkeydown={(e) => selectKeydown(e, block.id)}
 											animate:flip={{ duration: FLIP_MS }}
 										>
-											{#if View}
+										{#if block.type === 'text'}
+											<TextView
+												props={block.props as never}
+												editable={!readonly && selectedId === block.id}
+												onContentChange={(html) => onSetTextContent(block.id, html)}
+											/>
+										{:else if block.type === 'button'}
+											<ButtonView
+												props={block.props as never}
+												editable={!readonly && selectedId === block.id}
+												onTextChange={(text) => onSetButtonText(block.id, text)}
+											/>
+										{:else if View}
 												<View
 													props={block.props as never}
 													editable={!readonly && selectedId === block.id}

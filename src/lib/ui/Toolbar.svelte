@@ -13,7 +13,6 @@
 		onImportTemplate?: (file: File) => void | Promise<void>;
 		onExportTemplate: () => void;
 		onExportHtml: () => void;
-		onExportJson: () => void;
 		importError?: string;
 	}
 
@@ -31,7 +30,6 @@
 		onImportTemplate,
 		onExportTemplate,
 		onExportHtml,
-		onExportJson,
 		importError
 	}: Props = $props();
 
@@ -109,7 +107,6 @@
 		<button type="button" class="sme-tool" onclick={() => fileInput?.click()}>Import template</button>
 	{/if}
 	<button type="button" class="sme-tool" onclick={onExportTemplate}>Export template</button>
-	<button type="button" class="sme-tool" onclick={onExportJson}>Export state JSON</button>
 	<button type="button" class="sme-tool sme-tool-primary" onclick={onExportHtml}>
 		Export HTML
 	</button>

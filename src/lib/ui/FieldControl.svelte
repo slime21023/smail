@@ -4,13 +4,15 @@
 
 	interface Props {
 		field: InspectorField;
-		/** The (reactive) props object of the selected node. Mutated in place. */
-		target: Record<string, unknown>;
+		/** Read-only props object of the selected node. */
+		target: Readonly<Record<string, unknown>>;
+		/** Route field changes through the editor controller. */
+		onSetValue: (key: string, value: unknown) => void;
 		/** Editor-level custom controls (merged over built-ins by name). */
 		controls?: ControlRegistry;
 	}
 
-	let { field, target, controls }: Props = $props();
+	let { field, target, onSetValue, controls }: Props = $props();
 
 	const Control = $derived(resolveControl(field, controls));
 
@@ -20,7 +22,7 @@
 	}
 
 	function write(value: unknown) {
-		target[field.key] = field.parse ? field.parse(value) : value;
+		onSetValue(field.key, field.parse ? field.parse(value) : value);
 	}
 </script>
 

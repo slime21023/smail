@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {
 		MjmlEditor,
+		createEditor,
 		createBlock,
 		createColumn,
 		createEmptyState,
@@ -42,8 +43,21 @@
 		return state;
 	}
 
-	let template = $state(demoState());
 	let changes = $state(0);
+	const editor = createEditor({
+		state: demoState(),
+		parameters: [
+			{ key: 'firstName', label: 'First name', sample: 'Alice' },
+			{ key: 'couponCode', label: 'Coupon', sample: 'WELCOME10' }
+		],
+		onImageUpload: (file) =>
+			new Promise((resolve) => {
+				const reader = new FileReader();
+				reader.onload = () => setTimeout(() => resolve(reader.result as string), 300);
+				reader.readAsDataURL(file);
+			}),
+		onChange: () => changes++
+	});
 </script>
 
 <svelte:head>
@@ -51,20 +65,7 @@
 </svelte:head>
 
 <div class="demo">
-	<MjmlEditor
-		bind:state={template}
-		parameters={[
-			{ key: 'firstName', label: 'First name', sample: 'Alice' },
-			{ key: 'couponCode', label: 'Coupon', sample: 'WELCOME10' }
-		]}
-		onImageUpload={(file) =>
-			new Promise((resolve) => {
-				const reader = new FileReader();
-				reader.onload = () => setTimeout(() => resolve(reader.result as string), 300);
-				reader.readAsDataURL(file);
-			})}
-		onChange={() => changes++}
-	/>
+	<MjmlEditor {editor} />
 	<footer class="demo-footer">
 		smail demo playground — {changes} change{changes === 1 ? '' : 's'} this session
 	</footer>

@@ -3,11 +3,12 @@
 	import type { DocumentSettings, ParameterDef } from '../core/schema/types.js';
 
 	interface Props {
-		settings: DocumentSettings;
+		settings: Readonly<DocumentSettings>;
 		hostParameters: ParameterDef[];
+		onSetParameters: (parameters: ParameterDef[]) => void;
 	}
 
-	let { settings, hostParameters }: Props = $props();
+	let { settings, hostParameters, onSetParameters }: Props = $props();
 	let error = $state('');
 	let entries = $derived(settings.parameters ?? []);
 
@@ -20,7 +21,7 @@
 		let key = 'parameter';
 		let suffix = 2;
 		while (keys.has(key)) key = `parameter${suffix++}`;
-		settings.parameters = [...entries, { key, label: key }];
+		onSetParameters([...entries, { key, label: key }]);
 		error = '';
 	}
 
@@ -39,14 +40,14 @@
 			}
 			next.key = value;
 		}
-		settings.parameters = entries.map((parameter, candidate) => (candidate === index ? next : parameter));
+		onSetParameters(entries.map((parameter, candidate) => (candidate === index ? next : parameter)));
 		error = '';
 	}
 
 	function remove(index: number) {
 		const current = entries[index];
 		if (!current || locked(current.key)) return;
-		settings.parameters = entries.filter((_, candidate) => candidate !== index);
+		onSetParameters(entries.filter((_, candidate) => candidate !== index));
 	}
 </script>
 

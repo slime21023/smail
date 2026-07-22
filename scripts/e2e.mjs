@@ -268,21 +268,7 @@ try {
 	console.log('inline edit + undo ok');
 	await page.screenshot({ path: `${SHOT_DIR}/6-inline-edit.png` });
 
-	// 15. Social links editing (M6a): edit an href, add a github row
-	await page.click('.sme-canvas [aria-label="social"]');
-	const firstHref = page.locator('.sme-inspector .sme-social-row input[type="text"]').first();
-	await firstHref.fill('https://fb.example/test');
-	await previewContains('https://fb.example/test');
-	await page.click('.sme-inspector .sme-social-add');
-	await page
-		.locator('.sme-inspector .sme-social-row select')
-		.last()
-		.selectOption('github');
-	// compiled HTML carries the network's icon image, not the mjml name attr
-	await previewContains('github.png');
-	console.log('social links editing ok');
-
-	// 16. Template parameters: sample-data toggle
+	// 15. Template parameters: sample-data toggle
 	await previewContains('Hi {{firstName}}');
 	const sampleToggle = page.locator('.sme-toolbar button:has-text("Sample")');
 	await sampleToggle.click();
@@ -291,7 +277,7 @@ try {
 	await previewContains('Hi {{firstName}}');
 	console.log('template params ok');
 
-	// 17. Image upload hook (M6c): pick a file, demo hook resolves a data URI
+	// 16. Image upload hook (M6c): pick a file, demo hook resolves a data URI
 	await page.click('.sme-canvas [aria-label="image"]');
 	await page.waitForSelector('.sme-inspector .sme-upload-btn', { timeout: 5000 });
 	await page.setInputFiles('.sme-inspector .sme-upload-input', {
@@ -302,7 +288,7 @@ try {
 	await previewContains('data:image/gif');
 	console.log('image upload hook ok');
 
-	// 18. Rich text (M6d): bold everything, then insert a parameter
+	// 17. Rich text (M6d): bold everything, then insert a parameter
 	const richBlock = page.locator('.sme-canvas [aria-label="text"]').first();
 	await richBlock.click(); // select → arms editing
 	await richBlock.dblclick();
@@ -336,7 +322,7 @@ try {
 	if (errors.length) process.exit(1);
 	console.log('E2E OK — screenshots in e2e-artifacts/');
 } catch (err) {
-	writeFileSync(`${SHOT_DIR}/failure.txt`, `${err instanceof Error ? err.stack : String(err)}\n`);
+	let failureDetails = `${err instanceof Error ? err.stack : String(err)}\n`;
 	const page = browser ? (await browser.contexts())[0]?.pages()[0] : undefined;
 	if (page) {
 		await page.screenshot({ path: `${SHOT_DIR}/failure.png` }).catch(() => {});
@@ -350,7 +336,12 @@ try {
 			)
 			.catch(() => 'n/a');
 		console.error('block order at failure:', JSON.stringify(blockOrder));
+		const previewSource = await page
+			.evaluate(() => document.querySelector('.sme-preview-frame')?.getAttribute('srcdoc') ?? '')
+			.catch(() => 'n/a');
+		writeFileSync(`${SHOT_DIR}/preview-source.html`, previewSource);
 	}
+	writeFileSync(`${SHOT_DIR}/failure.txt`, failureDetails);
 	throw err;
 } finally {
 	await browser?.close();

@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { createDefaultTrackingSettings } from '../core/schema/defaults.js';
-	import type { DocumentSettings, UTMTrackingSettings } from '../core/schema/types.js';
+	import type { DocumentSettings, TrackingSettings, UTMTrackingSettings } from '../core/schema/types.js';
 
 	interface Props {
-		settings: DocumentSettings;
+		settings: Readonly<DocumentSettings>;
+		onSetTracking: (tracking: TrackingSettings) => void;
 	}
 
-	let { settings }: Props = $props();
+	let { settings, onSetTracking }: Props = $props();
 	type UtmKey = Exclude<keyof UTMTrackingSettings, 'enabled'>;
 	const utmFields: [UtmKey, string][] = [
 		['source', 'Source'],
@@ -17,15 +18,19 @@
 	];
 
 	function tracking() {
-		return (settings.tracking ??= createDefaultTrackingSettings());
+		return settings.tracking ?? createDefaultTrackingSettings();
 	}
 
 	function setCampaignId(value: string) {
-		tracking().campaignId = value || undefined;
+		onSetTracking({ ...tracking(), campaignId: value || undefined, utm: { ...tracking().utm } });
 	}
 
 	function setUtm(key: UtmKey, value: string) {
-		tracking().utm[key] = value || undefined;
+		onSetTracking({ ...tracking(), utm: { ...tracking().utm, [key]: value || undefined } });
+	}
+
+	function setUtmEnabled(enabled: boolean) {
+		onSetTracking({ ...tracking(), utm: { ...tracking().utm, enabled } });
 	}
 
 </script>
@@ -38,7 +43,7 @@
 	</label>
 
 	<label class="sme-checkbox">
-		<input type="checkbox" checked={tracking().utm.enabled} onchange={(e) => (tracking().utm.enabled = e.currentTarget.checked)} />
+		<input type="checkbox" checked={tracking().utm.enabled} onchange={(e) => setUtmEnabled(e.currentTarget.checked)} />
 		Enable UTM parameters on exported HTML
 	</label>
 

@@ -6,13 +6,17 @@
 	import { getEditorContext } from '../context.js';
 	import RichTextToolbar from './RichTextToolbar.svelte';
 
-	let { props, editable = false }: { props: TextBlockProps; editable?: boolean } = $props();
+	let {
+		props,
+		editable = false,
+		onContentChange
+	}: { props: TextBlockProps; editable?: boolean; onContentChange?: (html: string) => void } = $props();
 
 	const { delimiters } = getEditorContext();
 
 	// Inline WYSIWYG editing: double-click starts, Escape restores the sanitized
-	// initial draft, and blur/Ctrl+Enter commits. Live sync updates preview while
-	// the editor history debounce coalesces a typing burst into one undo entry.
+	// initial draft, and blur/Ctrl+Enter commits. Every update is routed through
+	// the controller callback so it participates in history and host events.
 	// execCommand is deprecated but remains broadly available; keeping calls here
 	// and in RichTextToolbar makes a future Range-based replacement localized.
 	let editing = $state(false);
@@ -35,7 +39,7 @@
 	}
 
 	function sync() {
-		if (surface) props.content = sanitizeTextHtml(surface.innerHTML);
+		if (surface) onContentChange?.(sanitizeTextHtml(surface.innerHTML));
 	}
 
 	function commit() {
@@ -44,7 +48,7 @@
 	}
 
 	function revert() {
-		props.content = sanitizeTextHtml(draftBefore);
+		onContentChange?.(sanitizeTextHtml(draftBefore));
 		editing = false;
 	}
 

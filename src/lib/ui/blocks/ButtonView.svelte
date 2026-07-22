@@ -4,21 +4,21 @@
 	import { paddingValue } from '../../core/serializer/format.js';
 	import type { ButtonBlockProps } from '../../core/schema/types.js';
 
-	let { props, editable: canEdit = false }: { props: ButtonBlockProps; editable?: boolean } =
+	let { props, editable: canEdit = false, onTextChange }: { props: ButtonBlockProps; editable?: boolean; onTextChange?: (text: string) => void } =
 		$props();
 
 	const id = $props.id();
 
 	// Dblclick to edit; Enter/blur commits, Escape reverts (machine-internal).
-	// Live onValueChange keeps the preview pane in sync while typing; the
-	// 300ms history debounce coalesces keystrokes into one undo entry.
+	// Live changes are routed through the controller callback for history and
+	// host notifications instead of mutating the block props in place.
 	const service = useMachine(editable.machine, () => ({
 		id,
 		value: props.text,
 		disabled: !canEdit,
 		activationMode: 'dblclick' as const,
 		onValueChange(d: editable.ValueChangeDetails) {
-			if (d.value !== props.text) props.text = d.value;
+			if (d.value !== props.text) onTextChange?.(d.value);
 		}
 	}));
 

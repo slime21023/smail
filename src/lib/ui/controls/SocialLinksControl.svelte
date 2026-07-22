@@ -36,6 +36,7 @@
 				aria-label="{field.label} URL"
 				value={row.href}
 				oninput={(e) => update(i, { href: e.currentTarget.value })}
+				onchange={(e) => update(i, { href: e.currentTarget.value })}
 			/>
 			<button type="button" aria-label="Remove link" title="Remove link" onclick={() => remove(i)}>
 				✕
