@@ -1,16 +1,16 @@
 import type { EditorState } from '../core/schema/types.js';
 
 interface HistoryEntry {
-	/** Dedup key — the serialized MJML of the snapshot. */
+	/** Dedup key — a stable serialization of the complete document snapshot. */
 	key: string;
 	state: EditorState;
 }
 
 /**
  * Snapshot-based undo/redo. Callers capture a plain snapshot (use
- * `$state.snapshot`) keyed by its serialized MJML; identical consecutive
- * keys are dropped, which also keeps undo/redo application from
- * re-recording itself (restoring a state re-captures the same key).
+ * `$state.snapshot`) keyed by its complete JSON state. Identical consecutive
+ * snapshots are dropped, which also keeps undo/redo application from
+ * re-recording itself while retaining metadata that does not affect MJML.
  *
  * Stacks are `$state.raw` and updated immutably so stored snapshots stay
  * plain objects (deep proxies cannot be structuredClone'd).
@@ -33,7 +33,8 @@ export class HistoryStore {
 		return this.#future.length > 0;
 	}
 
-	capture(key: string, snapshot: EditorState): void {
+	capture(snapshot: EditorState): void {
+		const key = JSON.stringify(snapshot);
 		const last = this.#past[this.#past.length - 1];
 		if (last?.key === key) return;
 		this.#past = [...this.#past, { key, state: snapshot }].slice(-this.limit);

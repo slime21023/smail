@@ -1,6 +1,16 @@
 // Editor UI
 export { default as MjmlEditor } from './ui/MjmlEditor.svelte';
 export { type ThemeTokens } from './ui/theme.js';
+export { type MjmlEditorProps } from './ui/types.js';
+export {
+	createEditor,
+	EditorController,
+	type EditorChange,
+	type EditorChangeListener,
+	type EditorChangeSource,
+	type EditorCommandResult,
+	type EditorOptions
+} from './controller/editor.svelte.js';
 
 // Core (headless) API — safe to import in any environment.
 // compile() lazy-loads mjml-browser, so only calling it requires a DOM.
