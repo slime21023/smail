@@ -1,12 +1,11 @@
-name: Publish GitHub Package
+name: Upload release package
 
 on:
   release:
     types: [published]
 
 permissions:
-  contents: read
-  packages: write
+  contents: write
 
 jobs:
   publish:
@@ -19,8 +18,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://npm.pkg.github.com
-          scope: '@slime21023'
 
       - name: Verify release tag matches package version
         shell: bash
@@ -34,15 +31,13 @@ jobs:
       - run: bun run test
       - run: bun run build
 
-      - name: Scope package for GitHub Packages
+      - name: Pack release asset
         shell: bash
         run: |
-          npm pkg set name="@slime21023/smail"
-          npm pkg set repository.type=git
-          npm pkg set repository.url="git+https://github.com/${GITHUB_REPOSITORY}.git"
-          npm pkg set publishConfig.registry=https://npm.pkg.github.com
+          tarball="$(npm pack --ignore-scripts)"
+          sha256sum "$tarball" > "$tarball.sha256"
 
-      - name: Publish
-        run: npm publish --ignore-scripts
+      - name: Upload release assets
+        run: gh release upload "$GITHUB_REF_NAME" smail-*.tgz smail-*.tgz.sha256
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}

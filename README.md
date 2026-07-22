@@ -7,10 +7,10 @@ smail provides a visual `MjmlEditor` and headless APIs for template persistence 
 ## Install
 
 ```sh
-npm i smail mjml-browser
+npm i https://github.com/slime21023/smail/releases/download/v1.0.0/smail-1.0.0.tgz mjml-browser
 ```
 
-`svelte >= 5` and `mjml-browser 4.x` are peer dependencies. Use `mjml-browser` 4.x: its 5.x browser bundle is not compatible with Vite bundling.
+Replace `1.0.0` with the release version to install. `svelte >= 5` and `mjml-browser 4.x` are peer dependencies. Use `mjml-browser` 4.x: its 5.x browser bundle is not compatible with Vite bundling.
 
 ## Quick start
 

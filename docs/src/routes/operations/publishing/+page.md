@@ -1,11 +1,11 @@
 ---
 title: Publishing
-description: Release the scoped package through GitHub Packages.
+description: Attach the packaged library to a GitHub Release.
 sidebarTitle: Publishing
 order: 3
 ---
 
-The release workflow publishes a GitHub Packages npm package when a GitHub Release is published. The repository's regular package name remains `smail`; the package uploaded to GitHub Packages is scoped as `@slime21023/smail`, because the GitHub npm registry requires scoped names.
+The release workflow attaches an npm tarball and its SHA-256 checksum to a GitHub Release. The package name remains `smail`.
 
 ## Release procedure
 
@@ -23,26 +23,14 @@ The release workflow publishes a GitHub Packages npm package when a GitHub Relea
 3. Create and push a matching tag, for example `v0.1.0` for package version `0.1.0`.
 4. Create a GitHub Release from that tag and publish it.
 
-The workflow verifies that the release tag is exactly `v` followed by the package version, runs the quality suite, builds the package, then publishes with the repository `GITHUB_TOKEN` and `packages: write` permission. GitHub Packages rejects an existing package version, so releases are immutable by default.
+The workflow verifies that the release tag is exactly `v` followed by the package version, runs the quality suite, builds the package, then uploads `smail-<version>.tgz` and `smail-<version>.tgz.sha256` with the repository `GITHUB_TOKEN`. Uploading an already-existing asset fails, so a published asset is not silently replaced.
 
-## Install from GitHub Packages
+## Install from GitHub Release
 
-Add a scope mapping in the consuming project's `.npmrc`:
-
-```ini
-@slime21023:registry=https://npm.pkg.github.com
-```
-
-For private packages, authenticate npm with a personal access token (classic) that has `read:packages`:
-
-```ini
-//npm.pkg.github.com/:_authToken=TOKEN
-```
-
-Then install the scoped package:
+Install a specific released tarball, along with the required runtime peer dependency:
 
 ```sh
-npm i @slime21023/smail mjml-browser
+npm i https://github.com/slime21023/smail/releases/download/v1.0.0/smail-1.0.0.tgz mjml-browser
 ```
 
-Package visibility and access rules are managed in GitHub Packages. The workflow needs no long-lived publish token because `GITHUB_TOKEN` can publish a package associated with its workflow repository. See the [GitHub Packages npm registry guide](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-npm-registry) for access-control details.
+Replace `1.0.0` with the intended release version. Download the matching `.sha256` asset when an independent integrity check is needed. This distribution method requires an explicit asset URL; it does not support npm registry features such as version ranges, dist-tags, or `npm update`. Public Release assets can be installed without registry credentials. For private packages or semver-based dependency management, use an npm registry instead.

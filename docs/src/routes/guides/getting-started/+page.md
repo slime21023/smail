@@ -7,10 +7,10 @@ order: 1
 
 ## Requirements
 
-Install `smail`, `mjml-browser@4`, and Svelte 5. The package root is safe to import in an SSR module because `mjml-browser` loads only when compilation is requested. Calling `compile()` or `exportEmail()` requires a browser-like DOM.
+Install the released `smail` tarball, `mjml-browser@4`, and Svelte 5. Replace `1.0.0` with the release version. The package root is safe to import in an SSR module because `mjml-browser` loads only when compilation is requested. Calling `compile()` or `exportEmail()` requires a browser-like DOM.
 
 ```sh
-npm i smail mjml-browser
+npm i https://github.com/slime21023/smail/releases/download/v1.0.0/smail-1.0.0.tgz mjml-browser
 ```
 
 ## Embed the editor
