@@ -1,4 +1,9 @@
-# External email rendering matrix
+---
+title: Email rendering matrix
+description: Validate generated email against real inbox clients before release.
+sidebarTitle: Email rendering matrix
+order: 2
+---
 
 `bun run generate:matrix` writes HTML, `.smail.json`, and a manifest for the newsletter, promotion, and transactional starters into `email-matrix-artifacts/`. Upload the HTML files to Litmus, Email on Acid, or a self-hosted inbox/screenshot service.
 

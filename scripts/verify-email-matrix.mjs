@@ -10,7 +10,9 @@ const result = JSON.parse(readFileSync(file, 'utf8'));
 const templates = ['newsletter', 'promotion', 'transactional'];
 const clients = ['gmail-web', 'apple-mail', 'ios-mail', 'android-gmail', 'outlook-web', 'outlook-windows'];
 if (result.version !== 1 || !Array.isArray(result.results)) {
-	throw new Error('Expected { version: 1, results: [...] }. See docs/email-rendering-matrix.md.');
+	throw new Error(
+		'Expected { version: 1, results: [...] }. See https://slime21023.github.io/smail/operations/email-rendering-matrix/.'
+	);
 }
 
 const index = new Map(result.results.map((entry) => [`${entry.template}:${entry.client}`, entry]));

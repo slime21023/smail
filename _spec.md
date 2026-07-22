@@ -1,5 +1,5 @@
 # smail technical specification
 
-This file is retained for existing links. The canonical maintainer specification is now [Architecture](./docs/architecture.md).
+This file is retained for existing links. The canonical maintainer specification is now [Architecture](https://slime21023.github.io/smail/reference/architecture/).
 
-For integration and public APIs, start at the [documentation index](./docs/README.md). For operational release gates, see [Production readiness](./docs/production-readiness.md).
+For integration and public APIs, start at the [developer documentation](https://slime21023.github.io/smail/). For operational release gates, see [Production readiness](https://slime21023.github.io/smail/operations/production-readiness/).

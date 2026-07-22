@@ -1,0 +1,19 @@
+:root {
+	color-scheme: light dark;
+}
+
+:focus-visible {
+	outline: 2px solid #2563eb;
+	outline-offset: 2px;
+}
+
+@media (min-width: 640px) {
+	body .theme-default-sidebar {
+		width: 18vw !important;
+		padding-left: clamp(1rem, 2vw, 2rem) !important;
+	}
+
+	body .theme-default--page-layout .content {
+		width: min(70vw, 63rem);
+	}
+}

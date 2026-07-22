@@ -1,16 +1,21 @@
-# Production readiness
+---
+title: Production readiness
+description: Release gates for production smail integrations.
+sidebarTitle: Production readiness
+order: 1
+---
 
 smail is currently alpha. Treat a release as production-ready only when every gate below passes for the exact package version and custom-block registry being released.
 
 ## 1. Email coverage and clients
 
-- Run the newsletter, promotion, and transactional starters plus product templates through the [external rendering matrix](./email-rendering-matrix.md).
+- Run the newsletter, promotion, and transactional starters plus product templates through the <Link to="/operations/email-rendering-matrix/" label="external rendering matrix" />.
 - Cover Text, Image, Button, Divider, Spacer, Social, one-to-four columns, UTM, and merge fields.
 - Complex tables, video, AMP Email, and arbitrary HTML/CSS are not first-party features. A custom block that adds them needs its own client-matrix evidence.
 
 ## 2. Host integration
 
-- Verify Svelte 5 installation, SSR import, controlled `state`, `onChange`, `readonly`, `onTemplateExport`, `onDeliveryExport`, image upload, and visible import errors.
+- Verify Svelte 5 installation, SSR import, controller-owned state, `subscribe`, `readonly`, controller export handlers, image upload, and visible import errors.
 - Test the application's own blocks, controls, `textEditor`, parameters, delimiters, and structural fields.
 - Treat custom `toMjml`, send-time merge values, and provider callbacks as trusted host code. Escape values, validate URLs, and record failures in the host application.
 

@@ -1,4 +1,9 @@
-# Publishing to GitHub Packages
+---
+title: Publishing
+description: Release the scoped package through GitHub Packages.
+sidebarTitle: Publishing
+order: 3
+---
 
 The release workflow publishes a GitHub Packages npm package when a GitHub Release is published. The repository's regular package name remains `smail`; the package uploaded to GitHub Packages is scoped as `@slime21023/smail`, because the GitHub npm registry requires scoped names.
 
@@ -18,7 +23,7 @@ The release workflow publishes a GitHub Packages npm package when a GitHub Relea
 3. Create and push a matching tag, for example `v0.1.0` for package version `0.1.0`.
 4. Create a GitHub Release from that tag and publish it.
 
-The workflow verifies that the release tag is exactly `v${package.json.version}`, runs the quality suite, builds the package, then publishes with the repository `GITHUB_TOKEN` and `packages: write` permission. GitHub Packages rejects an existing package version, so releases are immutable by default.
+The workflow verifies that the release tag is exactly `v` followed by the package version, runs the quality suite, builds the package, then publishes with the repository `GITHUB_TOKEN` and `packages: write` permission. GitHub Packages rejects an existing package version, so releases are immutable by default.
 
 ## Install from GitHub Packages
 

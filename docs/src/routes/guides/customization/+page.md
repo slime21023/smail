@@ -1,8 +1,15 @@
-# Customization
+---
+title: Customization
+description: Extend blocks, controls, text editing, parameters, and themes.
+sidebarTitle: Customization
+order: 3
+---
+
+All extensions are captured by `createEditor` for the controller lifetime. This lets editing, template import, and delivery export share one registry and one parameter/text-editing contract. View-only `readonly` and `theme` stay on `MjmlEditor`; see <Link to="/guides/editor-controller/" label="Editor controller" /> for the ownership model.
 
 ## Custom blocks
 
-Register custom blocks with `defineBlock` and pass them through the editor `blocks` prop.
+Register custom blocks with `defineBlock` and pass them to `createEditor`.
 
 ```ts
 import { defineBlock } from 'smail';
@@ -20,7 +27,12 @@ export const notice = defineBlock({
 ```
 
 ```svelte
-<MjmlEditor bind:state blocks={[notice]} />
+<script lang="ts">
+	import { MjmlEditor, createEditor, createEmptyState } from 'smail';
+
+	const editor = createEditor({ state: createEmptyState(), blocks: [notice] });
+</script>
+<MjmlEditor {editor} />
 ```
 
 `toMjml` must be pure and deterministic. It is trusted host code: smail does not sanitize custom MJML, escape custom props, validate URLs, or guarantee its rendering in email clients. Register the same block definitions in `parseTemplateFile(..., { registry })`, otherwise imported custom blocks are rejected.
@@ -42,7 +54,11 @@ Each field can select a built-in control or a registered custom control. A contr
 ```
 
 ```svelte
-<MjmlEditor bind:state controls={{ swatch: SwatchControl }} />
+<script lang="ts">
+	import { createEditor, createEmptyState } from 'smail';
+
+const editor = createEditor({ state: createEmptyState(), controls: { swatch: SwatchControl } });
+</script>
 ```
 
 Use `InspectorField.component` for a single field or `controls` for a named reusable control. `format` and `parse` map the stored value to/from the control value. `structuralFields` replaces document, section, or column Inspector field lists.
@@ -65,12 +81,16 @@ interface TextEditorProps {
 `setValue` is sanitized before it is persisted. `createParameter` returns an existing parameter or a newly stored one, and returns `null` for an invalid key. The canvas keeps smail's built-in double-click editor and toolbar.
 
 ```svelte
-<MjmlEditor
-	bind:state
-	textEditor={MyTextEditor}
-	parameters={[{ key: 'firstName', label: 'First name', sample: 'Ada' }]}
-	paramDelimiters={{ open: '{{', close: '}}' }}
-/>
+<script lang="ts">
+	import { createEditor, createEmptyState } from 'smail';
+
+const editor = createEditor({
+	state: createEmptyState(),
+	textEditor: MyTextEditor,
+	parameters: [{ key: 'firstName', label: 'First name', sample: 'Ada' }],
+	paramDelimiters: { open: '{{', close: '}}' }
+});
+</script>
 ```
 
 Host-provided `parameters` win on duplicate keys and are read-only in the document Inspector. End users can create their own parameters, which persist in `settings.parameters`. Sample values affect only sample preview; exported HTML keeps raw placeholders for the sending application.
@@ -78,11 +98,12 @@ Host-provided `parameters` win on duplicate keys and are read-only in the docume
 ## Image upload and styling
 
 ```svelte
-<MjmlEditor
-	bind:state
-	onImageUpload={async (file) => uploadToCdn(file)}
-	theme={{ accent: '#0f766e', 'panel-bg': '#f8fafc' }}
-/>
+<script lang="ts">
+	import { MjmlEditor, createEditor, createEmptyState } from 'smail';
+
+const editor = createEditor({ state: createEmptyState(), onImageUpload: async (file) => uploadToCdn(file) });
+</script>
+<MjmlEditor {editor} theme={{ accent: '#0f766e', 'panel-bg': '#f8fafc' }} />
 ```
 
 When `onImageUpload` resolves to a hosted URL, the Image Inspector writes it to the selected block. The callback must enforce upload authorization, size/type checks, storage policy, and URL lifetime. Theme tokens become `--sme-*` CSS variables; host CSS may override them directly.
